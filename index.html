@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard Monitoring Audit HHFHC</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-gray-100 text-gray-800">
+
+  <!-- Header -->
+  <header class="bg-emerald-800 text-white py-4 px-6 shadow-md flex justify-between items-center">
+    <div>
+      <h1 class="text-xl font-bold tracking-wide">HHFHC AUDIT SYSTEM</h1>
+      <p class="text-xs text-emerald-200">Hygienic • Healthy • Fresh • Halal • Clean | Monitoring 11 Store & 3 QSS</p>
+    </div>
+    <div class="flex gap-2">
+      <button onclick="switchTab('dashboard')" class="bg-emerald-700 hover:bg-emerald-600 px-4 py-2 rounded text-xs font-semibold">Dashboard</button>
+      <button onclick="switchTab('auditForm')" class="bg-amber-500 hover:bg-amber-400 text-gray-900 px-4 py-2 rounded text-xs font-bold">+ Input Audit</button>
+    </div>
+  </header>
+
+  <main class="container mx-auto p-4 md:p-6">
+
+    <!-- TAB DASHBOARD -->
+    <div id="tabDashboard" class="space-y-6">
+      
+      <!-- Metrics -->
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div class="bg-white p-4 rounded-xl shadow border-l-4 border-emerald-500">
+          <p class="text-xs font-bold text-gray-400 uppercase">Avg Compliance Score</p>
+          <p id="statAvgScore" class="text-3xl font-black text-gray-800 mt-1">0%</p>
+        </div>
+        <div class="bg-white p-4 rounded-xl shadow border-l-4 border-amber-500">
+          <p class="text-xs font-bold text-gray-400 uppercase">Total Temuan Aktif</p>
+          <p id="statActiveTemuan" class="text-3xl font-black text-amber-600 mt-1">0</p>
+        </div>
+        <div class="bg-white p-4 rounded-xl shadow border-l-4 border-blue-500">
+          <p class="text-xs font-bold text-gray-400 uppercase">Total Store Diaudit</p>
+          <p id="statTotalAudit" class="text-3xl font-black text-gray-800 mt-1">0</p>
+        </div>
+        <div class="bg-white p-4 rounded-xl shadow border-l-4 border-purple-500">
+          <p class="text-xs font-bold text-gray-400 uppercase">System Status</p>
+          <p class="text-sm font-bold text-purple-700 mt-2">● Real-time Sync Active</p>
+        </div>
+      </div>
+
+      <!-- Charts -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="bg-white p-5 rounded-xl shadow">
+          <h3 class="font-bold text-sm text-gray-600 mb-4">Perbandingan Nilai Compliance Per Store</h3>
+          <canvas id="chartStoreScore" height="200"></canvas>
+        </div>
+        <div class="bg-white p-5 rounded-xl shadow">
+          <h3 class="font-bold text-sm text-gray-600 mb-4">Sebaran Temuan Berdasarkan Pillar HHFHC</h3>
+          <canvas id="chartPillar" height="200"></canvas>
+        </div>
+      </div>
+
+      <!-- Table Action Plan -->
+      <div class="bg-white rounded-xl shadow overflow-hidden">
+        <div class="p-4 border-b bg-gray-50 flex justify-between items-center">
+          <h3 class="font-bold text-gray-700">Action Plan & Status CAPA Store Leader</h3>
+          <button onclick="loadData()" class="text-xs text-emerald-600 font-bold hover:underline">Refresh Data</button>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-gray-100 text-gray-600 uppercase font-semibold">
+              <tr>
+                <th class="p-3">Tanggal</th>
+                <th class="p-3">Store</th>
+                <th class="p-3">Pillar</th>
+                <th class="p-3">Detail Temuan Auditor</th>
+                <th class="p-3">Target Selesai</th>
+                <th class="p-3">Status Action</th>
+                <th class="p-3">Update Leader</th>
+              </tr>
+            </thead>
+            <tbody id="tableBody" class="divide-y">
+              <tr><td colspan="7" class="p-4 text-center text-gray-400">Memuat data audit...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- TAB INPUT AUDIT -->
+    <div id="tabAuditForm" class="hidden max-w-xl mx-auto bg-white p-6 rounded-xl shadow">
+      <h2 class="text-lg font-bold text-emerald-800 border-b pb-3 mb-4">Input Hasil Audit HHFHC Baru</h2>
+      <form id="auditForm" onsubmit="submitForm(event)" class="space-y-4">
+        
+        <div>
+          <label class="block text-xs font-bold mb-1">Pilih Store Audit</label>
+          <select id="inputStore" required class="w-full border rounded p-2 text-xs focus:ring-2 focus:ring-emerald-500">
+            <option value="">-- Pilih Store --</option>
+            <option value="Pandanwangi">Pandanwangi</option>
+            <option value="Bulak Laut">Bulak Laut</option>
+            <option value="Jatos">Jatos</option>
+            <option value="Cikajang">Cikajang</option>
+            <option value="Cileungsi">Cileungsi</option>
+            <option value="Singa">Singa</option>
+          </select>
+        </div>
+
+        <div class="grid grid-cols-5 gap-2 bg-emerald-50 p-3 rounded-lg">
+          <div>
+            <label class="text-[10px] font-bold block">Hygienic</label>
+            <input type="number" min="0" max="100" id="scoreH" placeholder="0-100" class="w-full border rounded p-1 text-xs text-center" required />
+          </div>
+          <div>
+            <label class="text-[10px] font-bold block">Healthy</label>
+            <input type="number" min="0" max="100" id="scoreHe" placeholder="0-100" class="w-full border rounded p-1 text-xs text-center" required />
+          </div>
+          <div>
+            <label class="text-[10px] font-bold block">Fresh</label>
+            <input type="number" min="0" max="100" id="scoreF" placeholder="0-100" class="w-full border rounded p-1 text-xs text-center" required />
+          </div>
+          <div>
+            <label class="text-[10px] font-bold block">Halal</label>
+            <input type="number" min="0" max="100" id="scoreHa" placeholder="0-100" class="w-full border rounded p-1 text-xs text-center" required />
+          </div>
+          <div>
+            <label class="text-[10px] font-bold block">Clean</label>
+            <input type="number" min="0" max="100" id="scoreC" placeholder="0-100" class="w-full border rounded p-1 text-xs text-center" required />
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold mb-1">Pillar Temuan Utama</label>
+          <select id="inputPillar" class="w-full border rounded p-2 text-xs">
+            <option value="Hygienic">Hygienic (Kebersihan Diri Crew)</option>
+            <option value="Healthy">Healthy (Prosedur Higienis & Suhu)</option>
+            <option value="Fresh">Fresh (Kualitas & Tanggal Expired)</option>
+            <option value="Halal">Halal (Penyimpanan & Bebas Kontaminasi)</option>
+            <option value="Clean">Clean (Kebersihan Alat & Area)</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold mb-1">Detail Temuan Auditor</label>
+          <textarea id="inputTemuan" rows="3" class="w-full border rounded p-2 text-xs" required placeholder="Jelaskan ketidaksesuaian yang ditemukan..."></textarea>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold mb-1">Target Selesai Perbaikan</label>
+          <input type="date" id="inputDueDate" class="w-full border rounded p-2 text-xs" required />
+        </div>
+
+        <button type="submit" id="btnSubmit" class="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-bold py-2 rounded text-xs transition">
+          Simpan Data Audit
+        </button>
+      </form>
+    </div>
+
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
