@@ -1,9 +1,10 @@
-const API_URL = "PASANG_WEB_APP_URL_APPS_SCRIPT_ANDA_DI_SINI";
+// GANTI TEKS DI DALAM TANDA KUTIP DENGAN URL WEB APP GOOGLE APPS SCRIPT ANDA
+const API_URL = "https://script.google.com/macros/s/AKfycbyd1UWrm8xPfCGYlQOXbPnzMfq4rWTKypsfRxbIljNdSBVvURmve_-FTM6M18wLZwFSxQ/exec";
 
 let chartStoreInstance = null;
 let chartPillarInstance = null;
 
-// Fungsi untuk konversi input koma (,) atau titik (.) menjadi angka desimal valid
+// Mengubah input koma (,) atau titik (.) menjadi angka desimal valid
 function parseDecimalInput(val) {
   if (!val) return 0;
   let cleanStr = val.toString().replace(',', '.');
@@ -23,12 +24,19 @@ function switchTab(tab) {
 }
 
 async function loadData() {
+  const tbody = document.getElementById('tableBody');
+  tbody.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-gray-400">Memuat data audit...</td></tr>`;
+
   try {
-    const response = await fetch(API_URL);
+    const response = await fetch(API_URL, {
+      method: 'GET',
+      redirect: 'follow'
+    });
     const data = await response.json();
     renderDashboard(data);
   } catch (error) {
     console.error("Gagal mengambil data:", error);
+    tbody.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-red-500 font-bold">Gagal memuat data. Pastikan URL API Apps Script benar dan Deployment diset ke "Anyone".</td></tr>`;
   }
 }
 
@@ -36,8 +44,11 @@ function renderDashboard(data) {
   const tbody = document.getElementById('tableBody');
   tbody.innerHTML = '';
 
-  if (data.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-gray-400">Belum ada data audit.</td></tr>`;
+  if (!data || data.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-gray-400">Belum ada data audit. Silakan klik tombol "+ Input Audit".</td></tr>`;
+    document.getElementById('statAvgScore').innerText = '0.0%';
+    document.getElementById('statActiveTemuan').innerText = '0';
+    document.getElementById('statTotalAudit').innerText = '0';
     return;
   }
 
@@ -110,15 +121,6 @@ function renderCharts(storeScores, pillarCount) {
             }
           }
         }
-      },
-      plugins: {
-        tooltip: {
-          callbacks: {
-            label: function(context) {
-              return `Score: ${context.raw}%`;
-            }
-          }
-        }
       }
     }
   });
@@ -154,13 +156,14 @@ async function submitForm(e) {
     pillar: document.getElementById('inputPillar').value,
     temuan: document.getElementById('inputTemuan').value,
     dueDate: document.getElementById('inputDueDate').value,
-    auditor: "Irfan Maulana"
+    auditor: "Auditor HHFHC"
   };
 
   try {
     await fetch(API_URL, {
       method: "POST",
-      body: JSON.stringify(payload)
+      body: JSON.stringify(payload),
+      redirect: 'follow'
     });
     alert("Audit berhasil disimpan!");
     document.getElementById('auditForm').reset();
@@ -180,7 +183,8 @@ async function updateStatus(id, currentStatus) {
   try {
     await fetch(API_URL, {
       method: "POST",
-      body: JSON.stringify({ action: "UPDATE_STATUS", id: id, newStatus: nextStatus })
+      body: JSON.stringify({ action: "UPDATE_STATUS", id: id, newStatus: nextStatus }),
+      redirect: 'follow'
     });
     loadData();
   } catch (err) {
