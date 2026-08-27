@@ -39,11 +39,13 @@ function renderDashboard(data) {
   let storeScores = {};
 
   data.forEach(item => {
-    totalAvg += Number(item.Average_Score || 0);
+    const currentScore = parseFloat(item.Average_Score || 0);
+    totalAvg += currentScore;
+
     if (item.Status !== 'Done') activeTemuan++;
     if (pillarCount[item.Pillar_Temuan] !== undefined) pillarCount[item.Pillar_Temuan]++;
     
-    storeScores[item.Store] = item.Average_Score;
+    storeScores[item.Store] = currentScore.toFixed(1);
 
     let badgeColor = item.Status === 'Done' ? 'bg-emerald-100 text-emerald-800' : 
                     (item.Status === 'In Progress' ? 'bg-amber-100 text-amber-800' : 'bg-red-100 text-red-800');
@@ -65,7 +67,8 @@ function renderDashboard(data) {
     `;
   });
 
-  document.getElementById('statAvgScore').innerText = (totalAvg / data.length).toFixed(1) + '%';
+  const overallAvg = (totalAvg / data.length).toFixed(1);
+  document.getElementById('statAvgScore').innerText = `${overallAvg}%`;
   document.getElementById('statActiveTemuan').innerText = activeTemuan;
   document.getElementById('statTotalAudit').innerText = Object.keys(storeScores).length;
 
@@ -87,7 +90,29 @@ function renderCharts(storeScores, pillarCount) {
         backgroundColor: '#10b981'
       }]
     },
-    options: { responsive: true, scales: { y: { min: 50, max: 100 } } }
+    options: {
+      responsive: true,
+      scales: {
+        y: {
+          min: 0,
+          max: 100,
+          ticks: {
+            callback: function(value) {
+              return value + '%';
+            }
+          }
+        }
+      },
+      plugins: {
+        tooltip: {
+          callbacks: {
+            label: function(context) {
+              return `Score: ${context.raw}%`;
+            }
+          }
+        }
+      }
+    }
   });
 
   const ctxPillar = document.getElementById('chartPillar').getContext('2d');
@@ -113,11 +138,11 @@ async function submitForm(e) {
   const payload = {
     action: "CREATE",
     store: document.getElementById('inputStore').value,
-    scoreH: document.getElementById('scoreH').value,
-    scoreHe: document.getElementById('scoreHe').value,
-    scoreF: document.getElementById('scoreF').value,
-    scoreHa: document.getElementById('scoreHa').value,
-    scoreC: document.getElementById('scoreC').value,
+    scoreH: parseFloat(document.getElementById('scoreH').value),
+    scoreHe: parseFloat(document.getElementById('scoreHe').value),
+    scoreF: parseFloat(document.getElementById('scoreF').value),
+    scoreHa: parseFloat(document.getElementById('scoreHa').value),
+    scoreC: parseFloat(document.getElementById('scoreC').value),
     pillar: document.getElementById('inputPillar').value,
     temuan: document.getElementById('inputTemuan').value,
     dueDate: document.getElementById('inputDueDate').value,

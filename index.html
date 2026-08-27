@@ -30,7 +30,7 @@
       <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div class="bg-white p-4 rounded-xl shadow border-l-4 border-emerald-500">
           <p class="text-xs font-bold text-gray-400 uppercase">Avg Compliance Score</p>
-          <p id="statAvgScore" class="text-3xl font-black text-gray-800 mt-1">0%</p>
+          <p id="statAvgScore" class="text-3xl font-black text-gray-800 mt-1">0.0%</p>
         </div>
         <div class="bg-white p-4 rounded-xl shadow border-l-4 border-amber-500">
           <p class="text-xs font-bold text-gray-400 uppercase">Total Temuan Aktif</p>
@@ -49,7 +49,7 @@
       <!-- Charts -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div class="bg-white p-5 rounded-xl shadow">
-          <h3 class="font-bold text-sm text-gray-600 mb-4">Perbandingan Nilai Compliance Per Store</h3>
+          <h3 class="font-bold text-sm text-gray-600 mb-4">Perbandingan Nilai Compliance Per Store (%)</h3>
           <canvas id="chartStoreScore" height="200"></canvas>
         </div>
         <div class="bg-white p-5 rounded-xl shadow">
@@ -104,26 +104,44 @@
           </select>
         </div>
 
-        <div class="grid grid-cols-5 gap-2 bg-emerald-50 p-3 rounded-lg">
-          <div>
-            <label class="text-[10px] font-bold block">Hygienic</label>
-            <input type="number" min="0" max="100" id="scoreH" placeholder="0-100" class="w-full border rounded p-1 text-xs text-center" required />
-          </div>
-          <div>
-            <label class="text-[10px] font-bold block">Healthy</label>
-            <input type="number" min="0" max="100" id="scoreHe" placeholder="0-100" class="w-full border rounded p-1 text-xs text-center" required />
-          </div>
-          <div>
-            <label class="text-[10px] font-bold block">Fresh</label>
-            <input type="number" min="0" max="100" id="scoreF" placeholder="0-100" class="w-full border rounded p-1 text-xs text-center" required />
-          </div>
-          <div>
-            <label class="text-[10px] font-bold block">Halal</label>
-            <input type="number" min="0" max="100" id="scoreHa" placeholder="0-100" class="w-full border rounded p-1 text-xs text-center" required />
-          </div>
-          <div>
-            <label class="text-[10px] font-bold block">Clean</label>
-            <input type="number" min="0" max="100" id="scoreC" placeholder="0-100" class="w-full border rounded p-1 text-xs text-center" required />
+        <div>
+          <label class="block text-xs font-bold mb-1">Skor Compliance Per Pillar (0 - 100%)</label>
+          <div class="grid grid-cols-5 gap-2 bg-emerald-50 p-3 rounded-lg">
+            <div>
+              <label class="text-[10px] font-bold block mb-1">Hygienic</label>
+              <div class="relative">
+                <input type="number" step="0.1" min="0" max="100" id="scoreH" placeholder="0.0" class="w-full border rounded p-1 pr-5 text-xs text-center font-bold" required />
+                <span class="absolute right-1 top-1 text-xs text-gray-400 font-bold">%</span>
+              </div>
+            </div>
+            <div>
+              <label class="text-[10px] font-bold block mb-1">Healthy</label>
+              <div class="relative">
+                <input type="number" step="0.1" min="0" max="100" id="scoreHe" placeholder="0.0" class="w-full border rounded p-1 pr-5 text-xs text-center font-bold" required />
+                <span class="absolute right-1 top-1 text-xs text-gray-400 font-bold">%</span>
+              </div>
+            </div>
+            <div>
+              <label class="text-[10px] font-bold block mb-1">Fresh</label>
+              <div class="relative">
+                <input type="number" step="0.1" min="0" max="100" id="scoreF" placeholder="0.0" class="w-full border rounded p-1 pr-5 text-xs text-center font-bold" required />
+                <span class="absolute right-1 top-1 text-xs text-gray-400 font-bold">%</span>
+              </div>
+            </div>
+            <div>
+              <label class="text-[10px] font-bold block mb-1">Halal</label>
+              <div class="relative">
+                <input type="number" step="0.1" min="0" max="100" id="scoreHa" placeholder="0.0" class="w-full border rounded p-1 pr-5 text-xs text-center font-bold" required />
+                <span class="absolute right-1 top-1 text-xs text-gray-400 font-bold">%</span>
+              </div>
+            </div>
+            <div>
+              <label class="text-[10px] font-bold block mb-1">Clean</label>
+              <div class="relative">
+                <input type="number" step="0.1" min="0" max="100" id="scoreC" placeholder="0.0" class="w-full border rounded p-1 pr-5 text-xs text-center font-bold" required />
+                <span class="absolute right-1 top-1 text-xs text-gray-400 font-bold">%</span>
+              </div>
+            </div>
           </div>
         </div>
 
