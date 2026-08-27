@@ -3,6 +3,14 @@ const API_URL = "https://script.google.com/macros/s/AKfycbwPEv-sfmvtVeSoSmXf3hFY
 let chartStoreInstance = null;
 let chartPillarInstance = null;
 
+// Fungsi untuk konversi input koma (,) atau titik (.) menjadi angka desimal valid
+function parseDecimalInput(val) {
+  if (!val) return 0;
+  let cleanStr = val.toString().replace(',', '.');
+  let num = parseFloat(cleanStr);
+  return isNaN(num) ? 0 : num;
+}
+
 function switchTab(tab) {
   if (tab === 'dashboard') {
     document.getElementById('tabDashboard').classList.remove('hidden');
@@ -39,7 +47,7 @@ function renderDashboard(data) {
   let storeScores = {};
 
   data.forEach(item => {
-    const currentScore = parseFloat(item.Average_Score || 0);
+    const currentScore = parseDecimalInput(item.Average_Score);
     totalAvg += currentScore;
 
     if (item.Status !== 'Done') activeTemuan++;
@@ -138,11 +146,11 @@ async function submitForm(e) {
   const payload = {
     action: "CREATE",
     store: document.getElementById('inputStore').value,
-    scoreH: parseFloat(document.getElementById('scoreH').value),
-    scoreHe: parseFloat(document.getElementById('scoreHe').value),
-    scoreF: parseFloat(document.getElementById('scoreF').value),
-    scoreHa: parseFloat(document.getElementById('scoreHa').value),
-    scoreC: parseFloat(document.getElementById('scoreC').value),
+    scoreH: parseDecimalInput(document.getElementById('scoreH').value),
+    scoreHe: parseDecimalInput(document.getElementById('scoreHe').value),
+    scoreF: parseDecimalInput(document.getElementById('scoreF').value),
+    scoreHa: parseDecimalInput(document.getElementById('scoreHa').value),
+    scoreC: parseDecimalInput(document.getElementById('scoreC').value),
     pillar: document.getElementById('inputPillar').value,
     temuan: document.getElementById('inputTemuan').value,
     dueDate: document.getElementById('inputDueDate').value,
