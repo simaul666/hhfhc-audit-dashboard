@@ -1,4 +1,4 @@
-const API_URL = "https://script.google.com/macros/s/AKfycbwPEv-sfmvtVeSoSmXf3hFYrVWmBUUiW_t_C8erYJ3fcmrV0nBlV3AhDFCKIdiU2OcV9g/exec";
+const API_URL = "PASANG_WEB_APP_URL_APPS_SCRIPT_ANDA_DI_SINI";
 
 let chartStoreInstance = null;
 let chartPillarInstance = null;
