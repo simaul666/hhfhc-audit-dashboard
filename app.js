@@ -111,7 +111,7 @@ function parsePdfDataAndFillForm(text) {
     document.getElementById("inputTanggalWaktu").value = dateVal;
   }
 
-  // C. EKSTRAKSI AUDITOR (PERBAIKAN: MENGHINDARI NAMA JABATAN)
+  // C. EKSTRAKSI AUDITOR (MENGHINDARI NAMA JABATAN)
   var auditorMatch = text.match(/Auditor\s*[:|-]?\s*([A-Za-z\s]+?)(?=\s+Jabatan|\s+Store Leader|\s+Shift|\n|$)/i) ||
                      text.match(/AUDITOR\s+([A-Za-z\s]+?)(?=\s+JABATAN|\s+STORE LEADER|\n|$)/i);
   if (auditorMatch) {
@@ -162,7 +162,6 @@ function parsePdfDataAndFillForm(text) {
   var container = document.getElementById("findingsContainer");
   container.innerHTML = "";
 
-  // Isolasi hanya pada bagian 'Ringkasan Temuan' dan potong sebelum 'Temuan Kritis / Menggagalkan'
   var summaryText = text;
   var idxRingkasan = text.search(/Ringkasan Temuan/i);
   var idxKritis = text.search(/Temuan Kritis|Menggagalkan Audit|Temuan Fatal/i);
@@ -309,6 +308,7 @@ function applyFilter() {
   renderCharts(filteredData);
 }
 
+// RENDER TABEL DASHBOARD (KODE DISEMBUNYIKAN)
 function renderTable(data) {
   var tbody = document.getElementById("tableBody");
   tbody.innerHTML = "";
@@ -324,7 +324,6 @@ function renderTable(data) {
     var storeVal = row.Store || row.store || "-";
     var tglVal = row.Tanggal || row.tanggal || "-";
     var pillarVal = row.Pillar_Temuan || row.pillar || "Hygiene";
-    var kodeVal = row.Kode_Sub || row.kode || "-";
     var detailVal = row.Detail_Temuan || row.detail || "-";
     var tindakanVal = row.Tindakan_Awal || row.tindakan || "-";
     var targetVal = row.Target_Selesai || row.target || "-";
@@ -340,7 +339,6 @@ function renderTable(data) {
       <td class="p-3 font-bold text-gray-800">${storeVal}</td>
       <td class="p-3">
         <span class="bg-gray-100 border text-gray-700 text-[10px] px-2 py-0.5 rounded font-semibold">${pillarVal}</span>
-        <span class="text-[10px] text-gray-400 block mt-0.5">${kodeVal}</span>
       </td>
       <td class="p-3 text-gray-700">${detailVal}</td>
       <td class="p-3 text-gray-700 font-medium">${tindakanVal}</td>
