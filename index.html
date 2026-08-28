@@ -9,20 +9,18 @@
 </head>
 <body class="bg-gray-100 text-gray-800">
 
-  <!-- Header & Navigasi Terpisah -->
   <header class="bg-emerald-800 text-white shadow-md">
     <div class="container mx-auto px-4 py-4 flex flex-col md:flex-row justify-between items-center gap-4">
       <div>
         <h1 class="text-xl font-bold tracking-wide">HHFHC AUDIT SYSTEM</h1>
         <p class="text-xs text-emerald-200">Hygienic • Healthy • Fresh • Halal • Clean | Monitoring Store & QSS</p>
       </div>
-      <!-- Menu Navigasi -->
       <div class="flex flex-wrap gap-2">
-        <button id="navDashboard" onclick="switchTab('dashboard')" class="bg-emerald-700 hover:bg-emerald-600 px-4 py-2 rounded text-xs font-semibold transition">
-          📊 Dashboard Summary
+        <button id="navCharts" onclick="switchTab('charts')" class="bg-emerald-600 px-4 py-2 rounded text-xs font-semibold shadow transition">
+          📈 Update Score HHFHC Area 1.1
         </button>
-        <button id="navCharts" onclick="switchTab('charts')" class="bg-emerald-900 hover:bg-emerald-600 px-4 py-2 rounded text-xs font-semibold transition">
-          📈 Grafik Analytics
+        <button id="navDashboard" onclick="switchTab('dashboard')" class="bg-emerald-900 hover:bg-emerald-600 px-4 py-2 rounded text-xs font-semibold transition">
+          📊 Dashboard Summary
         </button>
         <button id="navAuditForm" onclick="switchTab('auditForm')" class="bg-amber-500 hover:bg-amber-400 text-gray-900 px-4 py-2 rounded text-xs font-bold transition">
           🔒 + Input Audit
@@ -33,7 +31,6 @@
 
   <main class="container mx-auto p-4 md:p-6">
 
-    <!-- BAR FILTER DATA -->
     <div class="bg-white p-4 rounded-xl shadow mb-6 flex flex-col md:flex-row justify-between items-center gap-4">
       <div class="flex items-center gap-3 w-full md:w-auto">
         <label for="filterStore" class="text-xs font-bold text-gray-600 whitespace-nowrap">Filter Store:</label>
@@ -52,10 +49,21 @@
       </div>
     </div>
 
-    <!-- MENU 1: TAB DASHBOARD SUMMARY -->
-    <div id="tabDashboard" class="space-y-6">
+    <div id="tabCharts" class="space-y-6">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="bg-white p-5 rounded-xl shadow">
+          <h3 class="font-bold text-sm text-gray-700 mb-4">Perbandingan Nilai Compliance Store (%)</h3>
+          <canvas id="chartStoreScore" height="220"></canvas>
+        </div>
+        <div class="bg-white p-5 rounded-xl shadow">
+          <h3 class="font-bold text-sm text-gray-700 mb-4">Sebaran Temuan Berdasarkan Pilar HHFHC</h3>
+          <canvas id="chartPillar" height="220"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div id="tabDashboard" class="hidden space-y-6">
       
-      <!-- Ringkasan Utam Metrics -->
       <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div class="bg-white p-4 rounded-xl shadow border-l-4 border-emerald-500">
           <p class="text-xs font-bold text-gray-400 uppercase">Avg Compliance Score</p>
@@ -75,7 +83,6 @@
         </div>
       </div>
 
-      <!-- Detail Ringkasan Nilai HHFHC Per Pilar -->
       <div class="bg-white p-5 rounded-xl shadow">
         <h3 class="font-bold text-sm text-gray-700 mb-3 uppercase tracking-wider">Rata-Rata Compliance Per Pilar HHFHC</h3>
         <div class="grid grid-cols-2 md:grid-cols-5 gap-3 text-center">
@@ -102,7 +109,6 @@
         </div>
       </div>
 
-      <!-- Tabel Action Plan -->
       <div class="bg-white rounded-xl shadow overflow-hidden">
         <div class="p-4 border-b bg-gray-50 flex justify-between items-center">
           <h3 class="font-bold text-gray-700 text-sm">Action Plan & Status CAPA Store Leader</h3>
@@ -130,21 +136,6 @@
 
     </div>
 
-    <!-- MENU 2: TAB GRAFIK ANALYTICS -->
-    <div id="tabCharts" class="hidden space-y-6">
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div class="bg-white p-5 rounded-xl shadow">
-          <h3 class="font-bold text-sm text-gray-700 mb-4">Perbandingan Nilai Compliance Store (%)</h3>
-          <canvas id="chartStoreScore" height="220"></canvas>
-        </div>
-        <div class="bg-white p-5 rounded-xl shadow">
-          <h3 class="font-bold text-sm text-gray-700 mb-4">Sebaran Temuan Berdasarkan Pilar HHFHC</h3>
-          <canvas id="chartPillar" height="220"></canvas>
-        </div>
-      </div>
-    </div>
-
-    <!-- MENU 3: TAB INPUT AUDIT -->
     <div id="tabAuditForm" class="hidden max-w-xl mx-auto bg-white p-6 rounded-xl shadow">
       <h2 class="text-lg font-bold text-emerald-800 border-b pb-3 mb-4">Input Hasil Audit HHFHC Baru</h2>
       <form id="auditForm" onsubmit="submitForm(event)" class="space-y-4">

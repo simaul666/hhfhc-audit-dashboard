@@ -8,7 +8,7 @@ let rawAuditData = [];
 let chartStoreInstance = null;
 let chartPillarInstance = null;
 
-// Fungsi pembersih angka super aman (Mengubah koma, persen, teks menjadi angka desimal valid)
+// Pembersih angka desimal super aman
 function cleanNumber(val) {
   if (val === undefined || val === null || val === '') return 0;
   let str = val.toString().replace('%', '').replace(',', '.').trim();
@@ -16,37 +16,37 @@ function cleanNumber(val) {
   return isNaN(num) ? 0 : num;
 }
 
-// Navigasi Menu Terpisah
+// Navigasi Menu Terpisah (Default ke Charts / Update Score)
 function switchTab(tab) {
-  const btnDashboard = document.getElementById('navDashboard');
   const btnCharts = document.getElementById('navCharts');
+  const btnDashboard = document.getElementById('navDashboard');
   const btnAuditForm = document.getElementById('navAuditForm');
 
-  const tabDashboard = document.getElementById('tabDashboard');
   const tabCharts = document.getElementById('tabCharts');
+  const tabDashboard = document.getElementById('tabDashboard');
   const tabAuditForm = document.getElementById('tabAuditForm');
 
-  btnDashboard.className = "bg-emerald-900 hover:bg-emerald-600 px-4 py-2 rounded text-xs font-semibold transition";
   btnCharts.className = "bg-emerald-900 hover:bg-emerald-600 px-4 py-2 rounded text-xs font-semibold transition";
+  btnDashboard.className = "bg-emerald-900 hover:bg-emerald-600 px-4 py-2 rounded text-xs font-semibold transition";
   btnAuditForm.className = "bg-amber-500 hover:bg-amber-400 text-gray-900 px-4 py-2 rounded text-xs font-bold transition";
 
-  if (tab === 'dashboard') {
+  if (tab === 'charts') {
+    tabCharts.classList.remove('hidden');
+    tabDashboard.classList.add('hidden');
+    tabAuditForm.classList.add('hidden');
+    btnCharts.className = "bg-emerald-600 px-4 py-2 rounded text-xs font-semibold shadow transition";
+    applyFilter();
+  } else if (tab === 'dashboard') {
     tabDashboard.classList.remove('hidden');
     tabCharts.classList.add('hidden');
     tabAuditForm.classList.add('hidden');
     btnDashboard.className = "bg-emerald-600 px-4 py-2 rounded text-xs font-semibold shadow transition";
-  } else if (tab === 'charts') {
-    tabDashboard.classList.add('hidden');
-    tabCharts.classList.remove('hidden');
-    tabAuditForm.classList.add('hidden');
-    btnCharts.className = "bg-emerald-600 px-4 py-2 rounded text-xs font-semibold shadow transition";
-    applyFilter();
   } else if (tab === 'auditForm') {
     const userPin = prompt("Masukkan PIN Khusus Auditor untuk Mengisi Audit:");
     if (userPin === SECRET_PIN) {
+      tabAuditForm.classList.remove('hidden');
       tabDashboard.classList.add('hidden');
       tabCharts.classList.add('hidden');
-      tabAuditForm.classList.remove('hidden');
     } else if (userPin !== null) {
       alert("PIN Salah! Akses pengisian audit ditolak.");
     }
@@ -60,7 +60,6 @@ async function loadData() {
   try {
     const response = await fetch(API_URL, { method: 'GET', redirect: 'follow' });
     rawAuditData = await response.json();
-    console.log("Data dari Google Sheets:", rawAuditData); // Untuk debugging
     applyFilter();
   } catch (error) {
     console.error("Gagal mengambil data:", error);
@@ -109,14 +108,12 @@ function renderDashboard(data) {
   let storeScores = {};
 
   data.forEach(item => {
-    // Ambil skor pilar menggunakan fungsi cleanNumber
     let h = cleanNumber(item.Score_Hygienic || item.Score_H || item.Hygienic);
     let he = cleanNumber(item.Score_Healthy || item.Score_He || item.Healthy);
     let f = cleanNumber(item.Score_Fresh || item.Score_F || item.Fresh);
     let ha = cleanNumber(item.Score_Halal || item.Score_Ha || item.Halal);
     let c = cleanNumber(item.Score_Clean || item.Score_C || item.Clean);
 
-    // Hitung rata-rata pilar untuk row ini
     let currentAvg = cleanNumber(item.Average_Score || item.Average);
     if (currentAvg === 0) {
       currentAvg = (h + he + f + ha + c) / 5;
@@ -165,12 +162,10 @@ function renderDashboard(data) {
 
   const totalItem = data.length;
   
-  // Tampilkan Rata-Rata Keseluruhan
   document.getElementById('statAvgScore').innerText = `${(totalAvgAll / totalItem).toFixed(1)}%`;
   document.getElementById('statActiveTemuan').innerText = activeTemuan;
   document.getElementById('statTotalAudit').innerText = totalItem;
 
-  // Tampilkan Rata-Rata Per Pilar
   document.getElementById('avgHygienic').innerText = `${(sumH / totalItem).toFixed(1)}%`;
   document.getElementById('avgHealthy').innerText = `${(sumHe / totalItem).toFixed(1)}%`;
   document.getElementById('avgFresh').innerText = `${(sumF / totalItem).toFixed(1)}%`;
@@ -245,7 +240,7 @@ async function submitForm(e) {
     });
     alert("Audit berhasil disimpan!");
     document.getElementById('auditForm').reset();
-    switchTab('dashboard');
+    switchTab('charts');
     loadData();
   } catch (err) {
     alert("Gagal menyimpan audit.");
