@@ -38,7 +38,7 @@ function switchTab(tabName) {
   }
 }
 
-// FUNGSI UTAMA: MEMBACA DAN EKSTRAK ISI FILE PDF
+// 1. BACA FILE PDF DENGAN PERBAIKAN PEMBERSIHAN TEKS
 async function handlePdfUpload(event) {
   var file = event.target.files[0];
   if (!file || file.type !== "application/pdf") {
@@ -57,9 +57,13 @@ async function handlePdfUpload(event) {
     for (var i = 1; i <= pdf.numPages; i++) {
       var page = await pdf.getPage(i);
       var textContent = await page.getTextContent();
+      // Gabungkan token teks dengan spasi yang bersih
       var pageText = textContent.items.map(s => s.str).join(" ");
       fullText += pageText + "\n";
     }
+
+    console.log("=== TEKS HASIL EKSTRAKSI PDF ===");
+    console.log(fullText);
 
     parsePdfDataAndFillForm(fullText);
     if (statusLbl) statusLbl.innerText = "PDF Berhasil Diekstrak!";
@@ -70,33 +74,45 @@ async function handlePdfUpload(event) {
   }
 }
 
-// EXTRACTOR TEKS PDF KEMUDIAN ISI KE FORM HTML
+// 2. PARSER TEPAT SESUAI STRUKTUR HASIL AUDIT QA
 function parsePdfDataAndFillForm(text) {
-  // 1. Ekstrak Store Name
+  // A. Ekstrak Nama Store (Misal: LC Siliwangi Tasik)
   var storeMatch = text.match(/(LC\s+[A-Za-z0-9\s]+?)(?=\s+Kode Store|$)/i);
-  if (storeMatch) document.getElementById("inputStore").value = storeMatch[1].trim();
+  if (storeMatch) {
+    document.getElementById("inputStore").value = storeMatch[1].trim();
+  }
 
-  // 2. Tanggal
+  // B. Ekstrak Tanggal
   var tglMatch = text.match(/(\d{4}-\d{2}-\d{2})/);
-  if (tglMatch) document.getElementById("inputTanggalWaktu").value = tglMatch[1];
+  if (tglMatch) {
+    document.getElementById("inputTanggalWaktu").value = tglMatch[1];
+  }
 
-  // 3. Auditor
+  // C. Ekstrak Auditor
   var auditorMatch = text.match(/AUDITOR\s+([A-Za-z\s]+?)(?=\s+STORE LEADER|\s+JABATAN|$)/i);
-  if (auditorMatch) document.getElementById("inputAuditor").value = auditorMatch[1].trim();
+  if (auditorMatch) {
+    document.getElementById("inputAuditor").value = auditorMatch[1].trim();
+  }
 
-  // 4. Store Leader
+  // D. Ekstrak Store Leader
   var leaderMatch = text.match(/STORE LEADER\s+([A-Za-z\s]+?)(?=\s+JENIS AUDIT|\s+SHIFT|$)/i);
-  if (leaderMatch) document.getElementById("inputStoreLeader").value = leaderMatch[1].trim();
+  if (leaderMatch) {
+    document.getElementById("inputStoreLeader").value = leaderMatch[1].trim();
+  }
 
-  // 5. Audit Ke
-  var auditKeMatch = text.match(/AUDIT KE-\s*\|\s*(\d+)/i);
-  if (auditKeMatch) document.getElementById("inputAuditKe").value = auditKeMatch[1];
+  // E. Ekstrak Audit Ke
+  var auditKeMatch = text.match(/AUDIT KE-\s*\|\s*(\d+)/i) || text.match(/AUDIT KE-\s*(\d+)/i);
+  if (auditKeMatch) {
+    document.getElementById("inputAuditKe").value = auditKeMatch[1];
+  }
 
-  // 6. Predikat
-  var predikatMatch = text.match(/PREDIKAT\s+([A-Za-z\s]+?)(?=\s+Unsur|$)/i);
-  if (predikatMatch) document.getElementById("inputPredikat").value = predikatMatch[1].trim();
+  // F. Ekstrak Predikat
+  var predikatMatch = text.match(/PREDIKAT\s+([A-Za-z\s]+?)(?=\s+Unsur|\s+Hygiene|$)/i);
+  if (predikatMatch) {
+    document.getElementById("inputPredikat").value = predikatMatch[1].trim();
+  }
 
-  // 7. Extract Pilar Scores (Pencapaian %)
+  // G. Ekstrak Skor 5 Pilar (%)
   var scoreH = text.match(/Hygiene\s*\|\s*[\d\.]+\s*\|\s*\d+\s*\|\s*(\d+)%/i);
   var scoreHe = text.match(/Healthy\s*\|\s*[\d\.]+\s*\|\s*\d+\s*\|\s*(\d+)%/i);
   var scoreF = text.match(/Fresh\s*\|\s*[\d\.]+\s*\|\s*\d+\s*\|\s*(\d+)%/i);
@@ -109,27 +125,52 @@ function parsePdfDataAndFillForm(text) {
   if (scoreHa) document.getElementById("scoreHa").value = scoreHa[1];
   if (scoreC) document.getElementById("scoreC").value = scoreC[1];
 
-  // 8. Extract Ringkasan Temuan
+  // H. Ekstrak Ringkasan Temuan
   var container = document.getElementById("findingsContainer");
-  container.innerHTML = ""; // Bersihkan form lama
+  container.innerHTML = ""; // Reset form temuan
 
-  // Pattern pencarian item temuan
-  var findingRegex = /(Minor|Mayor|Kritis)\s+(Hygiene|Healthy|Fresh|Halal|Clean)[.\s\-]*([A-Za-z0-9]+)?[\s\S]*?Temuan:\s*(.*?)\s*Tindakan awal:\s*(.*?)(?=(Minor|Mayor|Kritis|Temuan Kritis|$))/gi;
+  // Ekstrak bagian teks Ringkasan Temuan
+  var findingsSectionIndex = text.indexOf("Ringkasan Temuan");
+  var criticalSectionIndex = text.indexOf("Temuan Kritis");
+
+  var findingsText = text;
+  if (findingsSectionIndex !== -1) {
+    findingsText = text.substring(findingsSectionIndex, criticalSectionIndex !== -1 ? criticalSectionIndex : text.length);
+  }
+
+  // Regex fleksibel membaca per blok temuan
+  var regexBlock = /(Minor|Mayor|Kritis)\s+(Hygiene|Healthy|Fresh|Halal|Clean)[\s\.\-]*([A-Za-z0-9]+)?([\s\S]*?)(?=(Minor|Mayor|Kritis)\s+(Hygiene|Healthy|Fresh|Halal|Clean)|Temuan Kritis|$)/gi;
+
   var match;
   var count = 0;
 
-  while ((match = findingRegex.exec(text)) !== null) {
-    count++;
+  while ((match = regexBlock.exec(findingsText)) !== null) {
     var pillar = match[2];
     var code = match[3] || "-";
-    var detail = match[4].trim();
-    var action = match[5].trim();
+    var content = match[4] || "";
 
-    addFindingRowWithData(pillar, code, detail, action);
+    var detail = "-";
+    var action = "-";
+
+    var detailMatch = content.match(/Temuan:\s*(.*?)(?=\s*Tindakan awal:|$)/i);
+    if (detailMatch) {
+      detail = detailMatch[1].trim();
+    }
+
+    var actionMatch = content.match(/Tindakan awal:\s*(.*?)(?=$)/i);
+    if (actionMatch) {
+      action = actionMatch[1].trim();
+    }
+
+    // Jika ada isi detail/deskripsi temuan, masukkan ke form
+    if (detail !== "-" || content.trim().length > 0) {
+      count++;
+      addFindingRowWithData(pillar, code, detail, action);
+    }
   }
 
   if (count === 0) {
-    addFindingRow(); // Tambahkan 1 baris kosong jika tidak ada temuan
+    addFindingRow(); // Tambah 1 baris kosong jika tidak ada temuan
   }
 }
 
