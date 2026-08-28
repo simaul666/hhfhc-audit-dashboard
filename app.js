@@ -1,4 +1,4 @@
-// 1. URL Web App Google Apps Script Anda
+// 1. Pastikan isi URL Web App Google Apps Script Anda di sini
 const API_URL = "https://script.google.com/macros/s/AKfycbyd1UWrm8xPfCGYlQOXbPnzMfq4rWTKypsfRxbIljNdSBVvURmve_-FTM6M18wLZwFSxQ/exec";
 
 // 2. PIN Rahasia Input Audit
@@ -8,15 +8,15 @@ let rawAuditData = [];
 let chartStoreInstance = null;
 let chartPillarInstance = null;
 
-// Fungsi membaca input desimal (koma atau titik) & fleksibel baca properti objek
-function parseDecimalInput(val) {
+// Fungsi pembersih angka super aman (Mengubah koma, persen, teks menjadi angka desimal valid)
+function cleanNumber(val) {
   if (val === undefined || val === null || val === '') return 0;
-  let cleanStr = val.toString().replace(',', '.');
-  let num = parseFloat(cleanStr);
+  let str = val.toString().replace('%', '').replace(',', '.').trim();
+  let num = parseFloat(str);
   return isNaN(num) ? 0 : num;
 }
 
-// Navigasi Menu
+// Navigasi Menu Terpisah
 function switchTab(tab) {
   const btnDashboard = document.getElementById('navDashboard');
   const btnCharts = document.getElementById('navCharts');
@@ -60,6 +60,7 @@ async function loadData() {
   try {
     const response = await fetch(API_URL, { method: 'GET', redirect: 'follow' });
     rawAuditData = await response.json();
+    console.log("Data dari Google Sheets:", rawAuditData); // Untuk debugging
     applyFilter();
   } catch (error) {
     console.error("Gagal mengambil data:", error);
@@ -75,7 +76,7 @@ function applyFilter() {
   if (selectedStore !== 'ALL') {
     filteredData = rawAuditData.filter(item => {
       let storeName = item.Store || item.store || '';
-      return storeName.trim().toLowerCase() === selectedStore.trim().toLowerCase();
+      return storeName.toString().trim().toLowerCase() === selectedStore.trim().toLowerCase();
     });
   }
 
@@ -108,16 +109,16 @@ function renderDashboard(data) {
   let storeScores = {};
 
   data.forEach(item => {
-    // Ambil skor per pilar (fleksibel nama properti)
-    let h = parseDecimalInput(item.Score_Hygienic || item.Score_H || item.Hygienic);
-    let he = parseDecimalInput(item.Score_Healthy || item.Score_He || item.Healthy);
-    let f = parseDecimalInput(item.Score_Fresh || item.Score_F || item.Fresh);
-    let ha = parseDecimalInput(item.Score_Halal || item.Score_Ha || item.Halal);
-    let c = parseDecimalInput(item.Score_Clean || item.Score_C || item.Clean);
+    // Ambil skor pilar menggunakan fungsi cleanNumber
+    let h = cleanNumber(item.Score_Hygienic || item.Score_H || item.Hygienic);
+    let he = cleanNumber(item.Score_Healthy || item.Score_He || item.Healthy);
+    let f = cleanNumber(item.Score_Fresh || item.Score_F || item.Fresh);
+    let ha = cleanNumber(item.Score_Halal || item.Score_Ha || item.Halal);
+    let c = cleanNumber(item.Score_Clean || item.Score_C || item.Clean);
 
-    // Hitung Average jika dari Sheets bernilai 0 / undefined
-    let currentAvg = parseDecimalInput(item.Average_Score || item.Average || item.avg);
-    if (currentAvg === 0 && (h > 0 || he > 0 || f > 0 || ha > 0 || c > 0)) {
+    // Hitung rata-rata pilar untuk row ini
+    let currentAvg = cleanNumber(item.Average_Score || item.Average);
+    if (currentAvg === 0) {
       currentAvg = (h + he + f + ha + c) / 5;
     }
 
@@ -132,9 +133,7 @@ function renderDashboard(data) {
     if (status !== 'Done') activeTemuan++;
 
     let pillar = item.Pillar_Temuan || item.Pillar || item.pillar || 'Hygienic';
-    if (pillarCount[pillar] !== undefined) {
-      pillarCount[pillar]++;
-    }
+    if (pillarCount[pillar] !== undefined) pillarCount[pillar]++;
 
     let storeName = item.Store || item.store || 'Unknown';
     storeScores[storeName] = currentAvg.toFixed(1);
@@ -165,11 +164,13 @@ function renderDashboard(data) {
   });
 
   const totalItem = data.length;
+  
+  // Tampilkan Rata-Rata Keseluruhan
   document.getElementById('statAvgScore').innerText = `${(totalAvgAll / totalItem).toFixed(1)}%`;
   document.getElementById('statActiveTemuan').innerText = activeTemuan;
   document.getElementById('statTotalAudit').innerText = totalItem;
 
-  // Tampilkan Rata-rata Pilar HHFHC
+  // Tampilkan Rata-Rata Per Pilar
   document.getElementById('avgHygienic').innerText = `${(sumH / totalItem).toFixed(1)}%`;
   document.getElementById('avgHealthy').innerText = `${(sumHe / totalItem).toFixed(1)}%`;
   document.getElementById('avgFresh').innerText = `${(sumF / totalItem).toFixed(1)}%`;
@@ -225,11 +226,11 @@ async function submitForm(e) {
   const payload = {
     action: "CREATE",
     store: document.getElementById('inputStore').value,
-    scoreH: parseDecimalInput(document.getElementById('scoreH').value),
-    scoreHe: parseDecimalInput(document.getElementById('scoreHe').value),
-    scoreF: parseDecimalInput(document.getElementById('scoreF').value),
-    scoreHa: parseDecimalInput(document.getElementById('scoreHa').value),
-    scoreC: parseDecimalInput(document.getElementById('scoreC').value),
+    scoreH: cleanNumber(document.getElementById('scoreH').value),
+    scoreHe: cleanNumber(document.getElementById('scoreHe').value),
+    scoreF: cleanNumber(document.getElementById('scoreF').value),
+    scoreHa: cleanNumber(document.getElementById('scoreHa').value),
+    scoreC: cleanNumber(document.getElementById('scoreC').value),
     pillar: document.getElementById('inputPillar').value,
     temuan: document.getElementById('inputTemuan').value,
     dueDate: document.getElementById('inputDueDate').value,
