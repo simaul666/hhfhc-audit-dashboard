@@ -1,377 +1,342 @@
-// 1. Pastikan isi URL Web App Google Apps Script Anda di sini
-const API_URL = "https://script.google.com/macros/s/AKfycbyhZZoZUOfGvZR7NnOeb__6RyDzP_yZ3QS39SHnGvLzIpYqgXE271-zh2XeeiA0r8YVwg/exec";
+var SCRIPT_URL = "https://script.google.com/macros/s/AKfycby4wB4mdqzA-5EYoq4qZ2lqbCTxHspG7OkSj9eURT3Pt0T9_N4DqMMErsY94bKq-fjgpQ/exec"; 
 
-// 2. PIN Rahasia Input Audit
-const SECRET_PIN = "1234";
+var allData = [];
+var storeChartInstance = null;
+var pillarChartInstance = null;
 
-let rawAuditData = [];
-let chartStoreInstance = null;
-let chartPillarInstance = null;
-let findingCounter = 0;
+document.addEventListener("DOMContentLoaded", function() {
+  var inputTgl = document.getElementById("inputTanggalWaktu");
+  if (inputTgl) {
+    inputTgl.value = new Date().toISOString().split("T")[0];
+  }
+  
+  addFindingRow();
+  loadData();
+});
 
-// Pembersih angka desimal super aman
-function cleanNumber(val) {
-  if (val === undefined || val === null || val === '') return 0;
-  let str = val.toString().replace('%', '').replace(',', '.').trim();
-  let num = parseFloat(str);
-  return isNaN(num) ? 0 : num;
-}
+function switchTab(tabName) {
+  document.getElementById("tabCharts").classList.add("hidden");
+  document.getElementById("tabDashboard").classList.add("hidden");
+  document.getElementById("tabAuditForm").classList.add("hidden");
 
-// Fungsi Menambah Input Temuan Baru (Multiple Findings)
-function addFindingRow() {
-  findingCounter++;
-  const container = document.getElementById('findingsContainer');
-  const rowId = `finding_row_${findingCounter}`;
+  document.getElementById("navCharts").className = "bg-emerald-900 hover:bg-emerald-600 px-4 py-2 rounded text-xs font-semibold transition";
+  document.getElementById("navDashboard").className = "bg-emerald-900 hover:bg-emerald-600 px-4 py-2 rounded text-xs font-semibold transition";
+  document.getElementById("navAuditForm").className = "bg-emerald-900 hover:bg-emerald-600 px-4 py-2 rounded text-xs font-semibold transition";
 
-  const html = `
-    <div id="${rowId}" class="bg-white p-3 rounded border border-gray-200 relative space-y-2 shadow-sm">
-      <div class="flex justify-between items-center border-b pb-2">
-        <span class="text-[11px] font-bold text-emerald-700">Temuan #${findingCounter}</span>
-        ${findingCounter > 1 ? `<button type="button" onclick="removeFindingRow('${rowId}')" class="text-red-500 font-bold text-[10px] hover:underline">Hapus</button>` : ''}
-      </div>
-      
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
-        <div>
-          <label class="block text-[10px] font-bold mb-1">Tingkat & Pilar</label>
-          <div class="flex gap-1">
-            <select class="finding-level border rounded p-1 text-xs w-1/3 bg-gray-50">
-              <option value="Minor">Minor</option>
-              <option value="Mayor">Mayor</option>
-              <option value="Kritis">Kritis</option>
-            </select>
-            <select class="finding-pillar border rounded p-1 text-xs w-2/3 bg-gray-50">
-              <option value="Hygiene">Hygiene</option>
-              <option value="Healthy">Healthy</option>
-              <option value="Fresh">Fresh</option>
-              <option value="Halal">Halal</option>
-              <option value="Clean">Clean</option>
-            </select>
-          </div>
-        </div>
-
-        <div>
-          <label class="block text-[10px] font-bold mb-1">Kode / Sub-Pilar (opsional)</label>
-          <input type="text" class="finding-code border rounded p-1 text-xs w-full" placeholder="Misal: H1, He1, C7" />
-        </div>
-
-        <div>
-          <label class="block text-[10px] font-bold mb-1">Target Selesai Perbaikan</label>
-          <input type="date" class="finding-duedate border rounded p-1 text-xs w-full" required />
-        </div>
-      </div>
-
-      <div>
-        <label class="block text-[10px] font-bold mb-1">Detail Temuan Auditor</label>
-        <input type="text" class="finding-detail border rounded p-1.5 text-xs w-full" placeholder="Jelaskan temuan ketidaksesuaian..." required />
-      </div>
-
-      <div>
-        <label class="block text-[10px] font-bold mb-1">Tindakan Awal (Koreksi Langsung)</label>
-        <input type="text" class="finding-action border rounded p-1.5 text-xs w-full" placeholder="Contoh: Peneguran untuk memakai masker / Retraining cook" />
-      </div>
-    </div>
-  `;
-
-  container.insertAdjacentHTML('beforeend', html);
-}
-
-function removeFindingRow(rowId) {
-  const elem = document.getElementById(rowId);
-  if (elem) elem.remove();
-}
-
-// Navigasi Menu
-function switchTab(tab) {
-  const btnCharts = document.getElementById('navCharts');
-  const btnDashboard = document.getElementById('navDashboard');
-  const btnAuditForm = document.getElementById('navAuditForm');
-
-  const tabCharts = document.getElementById('tabCharts');
-  const tabDashboard = document.getElementById('tabDashboard');
-  const tabAuditForm = document.getElementById('tabAuditForm');
-
-  btnCharts.className = "bg-emerald-900 hover:bg-emerald-600 px-4 py-2 rounded text-xs font-semibold transition";
-  btnDashboard.className = "bg-emerald-900 hover:bg-emerald-600 px-4 py-2 rounded text-xs font-semibold transition";
-  btnAuditForm.className = "bg-amber-500 hover:bg-amber-400 text-gray-900 px-4 py-2 rounded text-xs font-bold transition";
-
-  if (tab === 'charts') {
-    tabCharts.classList.remove('hidden');
-    tabDashboard.classList.add('hidden');
-    tabAuditForm.classList.add('hidden');
-    btnCharts.className = "bg-emerald-600 px-4 py-2 rounded text-xs font-semibold shadow transition";
-    applyFilter();
-  } else if (tab === 'dashboard') {
-    tabDashboard.classList.remove('hidden');
-    tabCharts.classList.add('hidden');
-    tabAuditForm.classList.add('hidden');
-    btnDashboard.className = "bg-emerald-600 px-4 py-2 rounded text-xs font-semibold shadow transition";
-  } else if (tab === 'auditForm') {
-    const userPin = prompt("Masukkan PIN Khusus Auditor untuk Mengisi Audit:");
-    if (userPin === SECRET_PIN) {
-      tabAuditForm.classList.remove('hidden');
-      tabDashboard.classList.add('hidden');
-      tabCharts.classList.add('hidden');
-    } else if (userPin !== null) {
-      alert("PIN Salah! Akses pengisian audit ditolak.");
-    }
+  if (tabName === "charts") {
+    document.getElementById("tabCharts").classList.remove("hidden");
+    document.getElementById("navCharts").className = "bg-emerald-600 px-4 py-2 rounded text-xs font-semibold shadow transition";
+  } else if (tabName === "dashboard") {
+    document.getElementById("tabDashboard").classList.remove("hidden");
+    document.getElementById("navDashboard").className = "bg-emerald-600 px-4 py-2 rounded text-xs font-semibold shadow transition";
+  } else if (tabName === "auditForm") {
+    document.getElementById("tabAuditForm").classList.remove("hidden");
+    document.getElementById("navAuditForm").className = "bg-amber-500 hover:bg-amber-400 text-gray-900 px-4 py-2 rounded text-xs font-bold transition";
   }
 }
 
-async function loadData() {
-  const tbody = document.getElementById('tableBody');
-  tbody.innerHTML = `<tr><td colspan="8" class="p-4 text-center text-gray-400">Memuat data audit...</td></tr>`;
-
-  try {
-    const response = await fetch(API_URL, { method: 'GET', redirect: 'follow' });
-    rawAuditData = await response.json();
-    applyFilter();
-  } catch (error) {
-    console.error("Gagal mengambil data:", error);
-    tbody.innerHTML = `<tr><td colspan="8" class="p-4 text-center text-red-500 font-bold">Gagal memuat data. Periksa koneksi internet atau URL API.</td></tr>`;
+function formatDateClean(dateStr) {
+  if (!dateStr || dateStr === "-") return "-";
+  var str = String(dateStr);
+  if (str.includes("T")) {
+    return str.split("T")[0];
   }
+  if (str.length >= 10 && str.charAt(4) === "-" && str.charAt(7) === "-") {
+    return str.substring(0, 10);
+  }
+  return str;
+}
+
+function loadData() {
+  fetch(SCRIPT_URL)
+    .then(function(res) { return res.json(); })
+    .then(function(data) {
+      allData = data;
+      applyFilter();
+    })
+    .catch(function(err) {
+      console.error("Gagal mengambil data:", err);
+    });
 }
 
 function applyFilter() {
-  const selectedStore = document.getElementById('filterStore').value;
-  document.getElementById('lblFilterTarget').innerText = selectedStore === 'ALL' ? 'Semua Store' : selectedStore;
+  var filterStore = document.getElementById("filterStore").value;
+  document.getElementById("lblFilterTarget").innerText = filterStore === "ALL" ? "Semua Store" : filterStore;
 
-  let filteredData = rawAuditData;
-  if (selectedStore !== 'ALL') {
-    filteredData = rawAuditData.filter(item => {
-      let storeName = item.Store || item.store || '';
-      return storeName.toString().trim().toLowerCase() === selectedStore.trim().toLowerCase();
-    });
-  }
+  var filteredData = allData.filter(function(row) {
+    if (filterStore === "ALL") return true;
+    return String(row.Store).toLowerCase() === filterStore.toLowerCase();
+  });
 
-  renderDashboard(filteredData);
+  renderTable(filteredData);
+  renderMetrics(filteredData);
+  renderCharts(filteredData);
 }
 
-function renderDashboard(data) {
-  const tbody = document.getElementById('tableBody');
-  tbody.innerHTML = '';
+function renderTable(data) {
+  var tbody = document.getElementById("tableBody");
+  tbody.innerHTML = "";
 
-  if (!data || data.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="8" class="p-4 text-center text-gray-400">Belum ada data audit untuk filter ini.</td></tr>`;
-    document.getElementById('statAvgScore').innerText = '0.0%';
-    document.getElementById('statActiveTemuan').innerText = '0';
-    document.getElementById('statTotalAudit').innerText = '0';
-    document.getElementById('avgHygienic').innerText = '0.0%';
-    document.getElementById('avgHealthy').innerText = '0.0%';
-    document.getElementById('avgFresh').innerText = '0.0%';
-    document.getElementById('avgHalal').innerText = '0.0%';
-    document.getElementById('avgClean').innerText = '0.0%';
-    renderCharts({}, { Hygiene: 0, Healthy: 0, Fresh: 0, Halal: 0, Clean: 0 });
+  if (data.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="8" class="p-4 text-center text-gray-400">Tidak ada data audit untuk store ini.</td></tr>';
     return;
   }
 
-  let totalAvgAll = 0;
-  let activeTemuan = 0;
+  data.forEach(function(row) {
+    var tr = document.createElement("tr");
+    
+    var statusBadgeClass = "bg-amber-100 text-amber-800";
+    if (row.Status === "Done") statusBadgeClass = "bg-emerald-100 text-emerald-800 font-bold";
+    if (row.Status === "In Progress") statusBadgeClass = "bg-blue-100 text-blue-800 font-bold";
 
-  let sumH = 0, sumHe = 0, sumF = 0, sumHa = 0, sumC = 0;
-  let pillarCount = { Hygiene: 0, Healthy: 0, Fresh: 0, Halal: 0, Clean: 0 };
-  let storeScores = {};
+    var tglFormatted = formatDateClean(row.Tanggal);
+    var targetFormatted = formatDateClean(row.Target_Selesai);
 
-  data.forEach(item => {
-    let h = cleanNumber(item.Score_Hygienic || item.Score_H || item.Hygienic);
-    let he = cleanNumber(item.Score_Healthy || item.Score_He || item.Healthy);
-    let f = cleanNumber(item.Score_Fresh || item.Score_F || item.Fresh);
-    let ha = cleanNumber(item.Score_Halal || item.Score_Ha || item.Halal);
-    let c = cleanNumber(item.Score_Clean || item.Score_C || item.Clean);
-
-    let currentAvg = cleanNumber(item.Average_Score || item.Average);
-    if (currentAvg === 0) {
-      currentAvg = (h + he + f + ha + c) / 5;
-    }
-
-    totalAvgAll += currentAvg;
-    sumH += h;
-    sumHe += he;
-    sumF += f;
-    sumHa += ha;
-    sumC += c;
-
-    let status = item.Status || item.status || 'Pending';
-    if (status !== 'Done') activeTemuan++;
-
-    let pillar = item.Pillar_Temuan || item.Pillar || item.pillar || 'Hygiene';
-    if (pillarCount[pillar] !== undefined) pillarCount[pillar]++;
-
-    let storeName = item.Store || item.store || 'Unknown';
-    storeScores[storeName] = currentAvg.toFixed(1);
-
-    let badgeColor = status === 'Done' ? 'bg-emerald-100 text-emerald-800' : 
-                    (status === 'In Progress' ? 'bg-amber-100 text-amber-800' : 'bg-red-100 text-red-800');
-
-    let itemID = item.ID || item.id || '';
-    let tgl = item.Tanggal || item.tanggal || '-';
-    let detail = item.Detail_Temuan || item.Detail || item.temuan || '-';
-    let tindakanAwal = item.Tindakan_Awal || item.tindakan || '-';
-    let target = item.Target_Selesai || item.DueDate || item.dueDate || '-';
-    let kodeSub = item.Kode_Sub || item.kode || '';
-
-    tbody.innerHTML += `
-      <tr class="hover:bg-gray-50 border-b">
-        <td class="p-3">${tgl}</td>
-        <td class="p-3 font-bold">${storeName}</td>
-        <td class="p-3"><span class="px-2 py-0.5 rounded bg-gray-100 border text-[10px]">${pillar} ${kodeSub ? `(${kodeSub})` : ''}</span></td>
-        <td class="p-3">${detail}</td>
-        <td class="p-3 text-gray-600 font-medium">${tindakanAwal}</td>
-        <td class="p-3">${target}</td>
-        <td class="p-3"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${badgeColor}">${status}</span></td>
-        <td class="p-3">
-          <button onclick="updateStatus('${itemID}', '${status}')" class="bg-blue-50 text-blue-600 hover:bg-blue-100 border border-blue-200 px-2 py-1 rounded text-[10px]">
-            Change Status
-          </button>
-        </td>
-      </tr>
+    tr.innerHTML = `
+      <td class="p-3 font-medium text-gray-600">${tglFormatted}</td>
+      <td class="p-3 font-bold text-gray-800">${row.Store || "-"}</td>
+      <td class="p-3">
+        <span class="bg-gray-100 border text-gray-700 text-[10px] px-2 py-0.5 rounded font-semibold">${row.Pillar_Temuan || "Hygiene"}</span>
+        <span class="text-[10px] text-gray-400 block mt-0.5">${row.Kode_Sub || "-"}</span>
+      </td>
+      <td class="p-3 text-gray-700">${row.Detail_Temuan || "-"}</td>
+      <td class="p-3 text-gray-700 font-medium">${row.Tindakan_Awal || "-"}</td>
+      <td class="p-3 text-gray-600 font-medium">${targetFormatted}</td>
+      <td class="p-3">
+        <span class="px-2 py-1 rounded text-[10px] ${statusBadgeClass}">${row.Status || "Pending"}</span>
+      </td>
+      <td class="p-3">
+        <button onclick="updateStatusPrompt('${row.ID}', '${row.Status}')" class="border border-blue-500 text-blue-600 hover:bg-blue-50 text-[10px] px-2 py-1 rounded font-semibold transition">
+          Change Status
+        </button>
+      </td>
     `;
+    tbody.appendChild(tr);
   });
-
-  const totalItem = data.length;
-  
-  document.getElementById('statAvgScore').innerText = `${(totalAvgAll / totalItem).toFixed(1)}%`;
-  document.getElementById('statActiveTemuan').innerText = activeTemuan;
-  document.getElementById('statTotalAudit').innerText = totalItem;
-
-  document.getElementById('avgHygienic').innerText = `${(sumH / totalItem).toFixed(1)}%`;
-  document.getElementById('avgHealthy').innerText = `${(sumHe / totalItem).toFixed(1)}%`;
-  document.getElementById('avgFresh').innerText = `${(sumF / totalItem).toFixed(1)}%`;
-  document.getElementById('avgHalal').innerText = `${(sumHa / totalItem).toFixed(1)}%`;
-  document.getElementById('avgClean').innerText = `${(sumC / totalItem).toFixed(1)}%`;
-
-  renderCharts(storeScores, pillarCount);
 }
 
-function renderCharts(storeScores, pillarCount) {
-  if (chartStoreInstance) chartStoreInstance.destroy();
-  if (chartPillarInstance) chartPillarInstance.destroy();
+function renderMetrics(data) {
+  if (data.length === 0) {
+    document.getElementById("statAvgScore").innerText = "0.0%";
+    document.getElementById("statActiveTemuan").innerText = "0";
+    document.getElementById("statTotalAudit").innerText = "0";
+    document.getElementById("avgHygienic").innerText = "0.0%";
+    document.getElementById("avgHealthy").innerText = "0.0%";
+    document.getElementById("avgFresh").innerText = "0.0%";
+    document.getElementById("avgHalal").innerText = "0.0%";
+    document.getElementById("avgClean").innerText = "0.0%";
+    return;
+  }
 
-  const ctxStore = document.getElementById('chartStoreScore').getContext('2d');
-  chartStoreInstance = new Chart(ctxStore, {
-    type: 'bar',
+  var sumAvg = 0, sumH = 0, sumHe = 0, sumF = 0, sumHa = 0, sumC = 0;
+  var activeTemuanCount = 0;
+
+  data.forEach(function(item) {
+    sumAvg += parseFloat(item.Average_Score) || 0;
+    sumH += parseFloat(item.Score_Hygienic) || 0;
+    sumHe += parseFloat(item.Score_Healthy) || 0;
+    sumF += parseFloat(item.Score_Fresh) || 0;
+    sumHa += parseFloat(item.Score_Halal) || 0;
+    sumC += parseFloat(item.Score_Clean) || 0;
+
+    if (item.Status !== "Done" && item.Detail_Temuan !== "Tidak Ada Temuan") {
+      activeTemuanCount++;
+    }
+  });
+
+  var total = data.length;
+  document.getElementById("statAvgScore").innerText = (sumAvg / total).toFixed(1) + "%";
+  document.getElementById("statActiveTemuan").innerText = activeTemuanCount;
+  document.getElementById("statTotalAudit").innerText = total;
+
+  document.getElementById("avgHygienic").innerText = (sumH / total).toFixed(1) + "%";
+  document.getElementById("avgHealthy").innerText = (sumHe / total).toFixed(1) + "%";
+  document.getElementById("avgFresh").innerText = (sumF / total).toFixed(1) + "%";
+  document.getElementById("avgHalal").innerText = (sumHa / total).toFixed(1) + "%";
+  document.getElementById("avgClean").innerText = (sumC / total).toFixed(1) + "%";
+}
+
+function renderCharts(data) {
+  var storeScores = {};
+  var pillarCounts = { "Hygiene": 0, "Healthy": 0, "Fresh": 0, "Halal": 0, "Clean": 0 };
+
+  data.forEach(function(item) {
+    var storeName = item.Store || "Unknown";
+    var score = parseFloat(item.Average_Score) || 0;
+
+    if (!storeScores[storeName]) {
+      storeScores[storeName] = { totalScore: 0, count: 0 };
+    }
+    storeScores[storeName].totalScore += score;
+    storeScores[storeName].count += 1;
+
+    var p = item.Pillar_Temuan;
+    if (pillarCounts.hasOwnProperty(p) && item.Detail_Temuan !== "Tidak Ada Temuan") {
+      pillarCounts[p] += 1;
+    }
+  });
+
+  var storeLabels = Object.keys(storeScores);
+  var storeAvgData = storeLabels.map(function(s) {
+    return (storeScores[s].totalScore / storeScores[s].count).toFixed(1);
+  });
+
+  var ctxStore = document.getElementById("chartStoreScore").getContext("2d");
+  if (storeChartInstance) storeChartInstance.destroy();
+  storeChartInstance = new Chart(ctxStore, {
+    type: "bar",
     data: {
-      labels: Object.keys(storeScores),
+      labels: storeLabels,
       datasets: [{
-        label: 'Score HHFHC (%)',
-        data: Object.values(storeScores),
-        backgroundColor: '#10b981'
+        label: "Nilai Rata-Rata (%)",
+        data: storeAvgData,
+        backgroundColor: "#059669"
       }]
     },
     options: {
       responsive: true,
-      scales: {
-        y: { min: 0, max: 100, ticks: { callback: v => v + '%' } }
-      }
+      scales: { y: { min: 0, max: 100 } }
     }
   });
 
-  const ctxPillar = document.getElementById('chartPillar').getContext('2d');
-  chartPillarInstance = new Chart(ctxPillar, {
-    type: 'doughnut',
+  var ctxPillar = document.getElementById("chartPillar").getContext("2d");
+  if (pillarChartInstance) pillarChartInstance.destroy();
+  pillarChartInstance = new Chart(ctxPillar, {
+    type: "doughnut",
     data: {
-      labels: Object.keys(pillarCount),
+      labels: Object.keys(pillarCounts),
       datasets: [{
-        data: Object.values(pillarCount),
-        backgroundColor: ['#f59e0b', '#10b981', '#3b82f6', '#8b5cf6', '#ec4899']
+        data: Object.values(pillarCounts),
+        backgroundColor: ["#10B981", "#3B82F6", "#F59E0B", "#8B5CF6", "#EF4444"]
       }]
     },
     options: { responsive: true }
   });
 }
 
-// Submit Multiple Findings ke Google Sheets
-async function submitForm(e) {
+function addFindingRow() {
+  var container = document.getElementById("findingsContainer");
+  var index = container.children.length + 1;
+
+  var div = document.createElement("div");
+  div.className = "finding-item bg-white p-3 rounded border border-gray-200 relative space-y-2";
+  div.innerHTML = `
+    <div class="flex justify-between items-center border-b pb-1">
+      <span class="font-bold text-[11px] text-gray-600">Temuan #${index}</span>
+      ${index > 1 ? `<button type="button" onclick="this.parentElement.parentElement.remove()" class="text-red-500 font-bold text-xs hover:underline">Hapus</button>` : ''}
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-2">
+      <div>
+        <label class="block text-[10px] font-bold text-gray-500">Pillar Audit</label>
+        <select class="finding-pillar w-full border rounded p-1.5 text-xs bg-gray-50 font-semibold">
+          <option value="Hygiene">Hygiene</option>
+          <option value="Healthy">Healthy</option>
+          <option value="Fresh">Fresh</option>
+          <option value="Halal">Halal</option>
+          <option value="Clean">Clean</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-[10px] font-bold text-gray-500">Kode Sub Checklist</label>
+        <input type="text" class="finding-code w-full border rounded p-1.5 text-xs" placeholder="Contoh: HYG-01" />
+      </div>
+      <div class="md:col-span-2">
+        <label class="block text-[10px] font-bold text-gray-500">Target Selesai (CAPA)</label>
+        <input type="date" class="finding-dueDate w-full border rounded p-1.5 text-xs bg-white" />
+      </div>
+    </div>
+    <div>
+      <label class="block text-[10px] font-bold text-gray-500">Detail Ketidaksesuaian / Temuan Auditor</label>
+      <textarea class="finding-detail w-full border rounded p-1.5 text-xs bg-white" rows="2" placeholder="Tuliskan temuan secara detail..."></textarea>
+    </div>
+    <div>
+      <label class="block text-[10px] font-bold text-gray-500">Tindakan Koreksi Awal</label>
+      <input type="text" class="finding-action w-full border rounded p-1.5 text-xs bg-white" placeholder="Contoh: Langsung dibersihkan saat audit" />
+    </div>
+  `;
+  container.appendChild(div);
+}
+
+function submitForm(e) {
   e.preventDefault();
-  const btn = document.getElementById('btnSubmit');
-  btn.innerText = "Mengirim...";
+  var btn = document.getElementById("btnSubmit");
+  btn.innerText = "Mengirim Data...";
   btn.disabled = true;
 
-  const store = document.getElementById('inputStore').value;
-  const tglWaktu = document.getElementById('inputTanggalWaktu').value;
-  const auditor = document.getElementById('inputAuditor').value;
-  const storeLeader = document.getElementById('inputStoreLeader').value;
-  const auditKe = document.getElementById('inputAuditKe').value;
-  const predikat = document.getElementById('inputPredikat').value;
+  var findingItems = document.querySelectorAll(".finding-item");
+  var findingsData = [];
 
-  const scoreH = cleanNumber(document.getElementById('scoreH').value);
-  const scoreHe = cleanNumber(document.getElementById('scoreHe').value);
-  const scoreF = cleanNumber(document.getElementById('scoreF').value);
-  const scoreHa = cleanNumber(document.getElementById('scoreHa').value);
-  const scoreC = cleanNumber(document.getElementById('scoreC').value);
-
-  const findingRows = document.querySelectorAll('#findingsContainer > div');
-  const findingsList = [];
-
-  findingRows.forEach(row => {
-    findingsList.push({
-      level: row.querySelector('.finding-level').value,
-      pillar: row.querySelector('.finding-pillar').value,
-      code: row.querySelector('.finding-code').value,
-      dueDate: row.querySelector('.finding-duedate').value,
-      detail: row.querySelector('.finding-detail').value,
-      action: row.querySelector('.finding-action').value
-    });
+  findingItems.forEach(function(item) {
+    var detailInput = item.querySelector(".finding-detail").value.trim();
+    var actionInput = item.querySelector(".finding-action").value.trim();
+    
+    if (detailInput !== "") {
+      findingsData.push({
+        pillar: item.querySelector(".finding-pillar").value,
+        code: item.querySelector(".finding-code").value.trim(),
+        dueDate: item.querySelector(".finding-dueDate").value,
+        detail: detailInput,
+        action: actionInput !== "" ? actionInput : "-"
+      });
+    }
   });
 
-  const payload = {
+  var payload = {
     action: "CREATE_MULTIPLE",
-    store: store,
-    tanggalWaktu: tglWaktu,
-    auditor: auditor,
-    storeLeader: storeLeader,
-    auditKe: auditKe,
-    predikat: predikat,
-    scoreH: scoreH,
-    scoreHe: scoreHe,
-    scoreF: scoreF,
-    scoreHa: scoreHa,
-    scoreC: scoreC,
-    findings: findingsList
+    store: document.getElementById("inputStore").value,
+    tanggalWaktu: document.getElementById("inputTanggalWaktu").value,
+    auditor: document.getElementById("inputAuditor").value,
+    storeLeader: document.getElementById("inputStoreLeader").value,
+    auditKe: document.getElementById("inputAuditKe").value,
+    predikat: document.getElementById("inputPredikat").value,
+    scoreH: document.getElementById("scoreH").value,
+    scoreHe: document.getElementById("scoreHe").value,
+    scoreF: document.getElementById("scoreF").value,
+    scoreHa: document.getElementById("scoreHa").value,
+    scoreC: document.getElementById("scoreC").value,
+    findings: findingsData
   };
 
-  try {
-    await fetch(API_URL, {
-      method: "POST",
-      body: JSON.stringify(payload),
-      redirect: 'follow'
-    });
-    alert("Seluruh data audit dan temuan berhasil disimpan!");
-    document.getElementById('auditForm').reset();
-    document.getElementById('findingsContainer').innerHTML = '';
+  fetch(SCRIPT_URL, {
+    method: "POST",
+    body: JSON.stringify(payload)
+  })
+  .then(function(res) { return res.json(); })
+  .then(function(res) {
+    alert(res.message);
+    document.getElementById("auditForm").reset();
+    document.getElementById("findingsContainer").innerHTML = "";
     addFindingRow();
-    switchTab('charts');
+    switchTab("dashboard");
     loadData();
-  } catch (err) {
-    alert("Gagal menyimpan audit.");
-    console.error(err);
-  } finally {
+  })
+  .catch(function(err) {
+    alert("Gagal mengirim data: " + err);
+  })
+  .finally(function() {
     btn.innerText = "Simpan Seluruh Data Audit & Temuan";
     btn.disabled = false;
-  }
+  });
 }
 
-async function updateStatus(id, currentStatus) {
-  const userPin = prompt("Masukkan PIN untuk Mengubah Status Action Plan:");
-  if (userPin !== SECRET_PIN) {
-    if (userPin !== null) alert("PIN Salah! Gagal mengubah status.");
-    return;
-  }
+function updateStatusPrompt(id, currentStatus) {
+  var newStatus = prompt("Pilih status baru (Pending / In Progress / Done):", currentStatus);
+  if (!newStatus) return;
 
-  let nextStatus = currentStatus === 'Pending' ? 'In Progress' : (currentStatus === 'In Progress' ? 'Done' : 'Pending');
-  
-  try {
-    await fetch(API_URL, {
-      method: "POST",
-      body: JSON.stringify({ action: "UPDATE_STATUS", id: id, newStatus: nextStatus }),
-      redirect: 'follow'
-    });
+  fetch(SCRIPT_URL, {
+    method: "POST",
+    body: JSON.stringify({
+      action: "UPDATE_STATUS",
+      id: id,
+      newStatus: newStatus
+    })
+  })
+  .then(function(res) { return res.json(); })
+  .then(function(res) {
+    alert(res.message);
     loadData();
-  } catch (err) {
-    alert("Gagal memperbarui status.");
-  }
+  })
+  .catch(function(err) {
+    alert("Gagal memperbarui status: " + err);
+  });
 }
-
-window.onload = function() {
-  addFindingRow();
-  loadData();
-};
