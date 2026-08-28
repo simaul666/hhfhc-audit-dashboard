@@ -1,21 +1,22 @@
-// 1. Pastikan isi URL API Google Apps Script Anda di sini
+// 1. URL Web App Google Apps Script Anda
 const API_URL = "https://script.google.com/macros/s/AKfycbyd1UWrm8xPfCGYlQOXbPnzMfq4rWTKypsfRxbIljNdSBVvURmve_-FTM6M18wLZwFSxQ/exec";
 
 // 2. PIN Rahasia Input Audit
 const SECRET_PIN = "1234";
 
-let rawAuditData = []; // Menyimpan data mentah
+let rawAuditData = [];
 let chartStoreInstance = null;
 let chartPillarInstance = null;
 
+// Fungsi membaca input desimal (koma atau titik) & fleksibel baca properti objek
 function parseDecimalInput(val) {
-  if (!val) return 0;
+  if (val === undefined || val === null || val === '') return 0;
   let cleanStr = val.toString().replace(',', '.');
   let num = parseFloat(cleanStr);
   return isNaN(num) ? 0 : num;
 }
 
-// Navigasi Menu Terpisah
+// Navigasi Menu
 function switchTab(tab) {
   const btnDashboard = document.getElementById('navDashboard');
   const btnCharts = document.getElementById('navCharts');
@@ -25,7 +26,6 @@ function switchTab(tab) {
   const tabCharts = document.getElementById('tabCharts');
   const tabAuditForm = document.getElementById('tabAuditForm');
 
-  // Reset Style Tombol
   btnDashboard.className = "bg-emerald-900 hover:bg-emerald-600 px-4 py-2 rounded text-xs font-semibold transition";
   btnCharts.className = "bg-emerald-900 hover:bg-emerald-600 px-4 py-2 rounded text-xs font-semibold transition";
   btnAuditForm.className = "bg-amber-500 hover:bg-amber-400 text-gray-900 px-4 py-2 rounded text-xs font-bold transition";
@@ -40,7 +40,7 @@ function switchTab(tab) {
     tabCharts.classList.remove('hidden');
     tabAuditForm.classList.add('hidden');
     btnCharts.className = "bg-emerald-600 px-4 py-2 rounded text-xs font-semibold shadow transition";
-    applyFilter(); // Render ulang grafik saat tab dibuka
+    applyFilter();
   } else if (tab === 'auditForm') {
     const userPin = prompt("Masukkan PIN Khusus Auditor untuk Mengisi Audit:");
     if (userPin === SECRET_PIN) {
@@ -67,14 +67,16 @@ async function loadData() {
   }
 }
 
-// Fungsi Filter Per Store
 function applyFilter() {
   const selectedStore = document.getElementById('filterStore').value;
   document.getElementById('lblFilterTarget').innerText = selectedStore === 'ALL' ? 'Semua Store' : selectedStore;
 
   let filteredData = rawAuditData;
   if (selectedStore !== 'ALL') {
-    filteredData = rawAuditData.filter(item => item.Store === selectedStore);
+    filteredData = rawAuditData.filter(item => {
+      let storeName = item.Store || item.store || '';
+      return storeName.trim().toLowerCase() === selectedStore.trim().toLowerCase();
+    });
   }
 
   renderDashboard(filteredData);
@@ -98,7 +100,7 @@ function renderDashboard(data) {
     return;
   }
 
-  let totalAvg = 0;
+  let totalAvgAll = 0;
   let activeTemuan = 0;
 
   let sumH = 0, sumHe = 0, sumF = 0, sumHa = 0, sumC = 0;
@@ -106,33 +108,55 @@ function renderDashboard(data) {
   let storeScores = {};
 
   data.forEach(item => {
-    const currentScore = parseDecimalInput(item.Average_Score);
-    totalAvg += currentScore;
+    // Ambil skor per pilar (fleksibel nama properti)
+    let h = parseDecimalInput(item.Score_Hygienic || item.Score_H || item.Hygienic);
+    let he = parseDecimalInput(item.Score_Healthy || item.Score_He || item.Healthy);
+    let f = parseDecimalInput(item.Score_Fresh || item.Score_F || item.Fresh);
+    let ha = parseDecimalInput(item.Score_Halal || item.Score_Ha || item.Halal);
+    let c = parseDecimalInput(item.Score_Clean || item.Score_C || item.Clean);
 
-    sumH += parseDecimalInput(item.Score_Hygienic);
-    sumHe += parseDecimalInput(item.Score_Healthy);
-    sumF += parseDecimalInput(item.Score_Fresh);
-    sumHa += parseDecimalInput(item.Score_Halal);
-    sumC += parseDecimalInput(item.Score_Clean);
+    // Hitung Average jika dari Sheets bernilai 0 / undefined
+    let currentAvg = parseDecimalInput(item.Average_Score || item.Average || item.avg);
+    if (currentAvg === 0 && (h > 0 || he > 0 || f > 0 || ha > 0 || c > 0)) {
+      currentAvg = (h + he + f + ha + c) / 5;
+    }
 
-    if (item.Status !== 'Done') activeTemuan++;
-    if (pillarCount[item.Pillar_Temuan] !== undefined) pillarCount[item.Pillar_Temuan]++;
-    
-    storeScores[item.Store] = currentScore.toFixed(1);
+    totalAvgAll += currentAvg;
+    sumH += h;
+    sumHe += he;
+    sumF += f;
+    sumHa += ha;
+    sumC += c;
 
-    let badgeColor = item.Status === 'Done' ? 'bg-emerald-100 text-emerald-800' : 
-                    (item.Status === 'In Progress' ? 'bg-amber-100 text-amber-800' : 'bg-red-100 text-red-800');
+    let status = item.Status || item.status || 'Pending';
+    if (status !== 'Done') activeTemuan++;
+
+    let pillar = item.Pillar_Temuan || item.Pillar || item.pillar || 'Hygienic';
+    if (pillarCount[pillar] !== undefined) {
+      pillarCount[pillar]++;
+    }
+
+    let storeName = item.Store || item.store || 'Unknown';
+    storeScores[storeName] = currentAvg.toFixed(1);
+
+    let badgeColor = status === 'Done' ? 'bg-emerald-100 text-emerald-800' : 
+                    (status === 'In Progress' ? 'bg-amber-100 text-amber-800' : 'bg-red-100 text-red-800');
+
+    let itemID = item.ID || item.id || '';
+    let tgl = item.Tanggal || item.tanggal || '-';
+    let detail = item.Detail_Temuan || item.Detail || item.temuan || '-';
+    let target = item.Target_Selesai || item.DueDate || item.dueDate || '-';
 
     tbody.innerHTML += `
       <tr class="hover:bg-gray-50 border-b">
-        <td class="p-3">${item.Tanggal}</td>
-        <td class="p-3 font-bold">${item.Store}</td>
-        <td class="p-3"><span class="px-2 py-0.5 rounded bg-gray-100 border text-[10px]">${item.Pillar_Temuan}</span></td>
-        <td class="p-3">${item.Detail_Temuan}</td>
-        <td class="p-3">${item.Target_Selesai}</td>
-        <td class="p-3"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${badgeColor}">${item.Status}</span></td>
+        <td class="p-3">${tgl}</td>
+        <td class="p-3 font-bold">${storeName}</td>
+        <td class="p-3"><span class="px-2 py-0.5 rounded bg-gray-100 border text-[10px]">${pillar}</span></td>
+        <td class="p-3">${detail}</td>
+        <td class="p-3">${target}</td>
+        <td class="p-3"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${badgeColor}">${status}</span></td>
         <td class="p-3">
-          <button onclick="updateStatus('${item.ID}', '${item.Status}')" class="bg-blue-50 text-blue-600 hover:bg-blue-100 border border-blue-200 px-2 py-1 rounded text-[10px]">
+          <button onclick="updateStatus('${itemID}', '${status}')" class="bg-blue-50 text-blue-600 hover:bg-blue-100 border border-blue-200 px-2 py-1 rounded text-[10px]">
             Change Status
           </button>
         </td>
@@ -141,11 +165,11 @@ function renderDashboard(data) {
   });
 
   const totalItem = data.length;
-  document.getElementById('statAvgScore').innerText = `${(totalAvg / totalItem).toFixed(1)}%`;
+  document.getElementById('statAvgScore').innerText = `${(totalAvgAll / totalItem).toFixed(1)}%`;
   document.getElementById('statActiveTemuan').innerText = activeTemuan;
   document.getElementById('statTotalAudit').innerText = totalItem;
 
-  // Render Rata-rata Pilar HHFHC
+  // Tampilkan Rata-rata Pilar HHFHC
   document.getElementById('avgHygienic').innerText = `${(sumH / totalItem).toFixed(1)}%`;
   document.getElementById('avgHealthy').innerText = `${(sumHe / totalItem).toFixed(1)}%`;
   document.getElementById('avgFresh').innerText = `${(sumF / totalItem).toFixed(1)}%`;
