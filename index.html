@@ -9,24 +9,53 @@
 </head>
 <body class="bg-gray-100 text-gray-800">
 
-  <!-- Header -->
-  <header class="bg-emerald-800 text-white py-4 px-6 shadow-md flex justify-between items-center">
-    <div>
-      <h1 class="text-xl font-bold tracking-wide">HHFHC AUDIT SYSTEM</h1>
-      <p class="text-xs text-emerald-200">Hygienic • Healthy • Fresh • Halal • Clean | Monitoring Store & QSS</p>
-    </div>
-    <div class="flex gap-2">
-      <button onclick="switchTab('dashboard')" class="bg-emerald-700 hover:bg-emerald-600 px-4 py-2 rounded text-xs font-semibold">Dashboard</button>
-      <button onclick="switchTab('auditForm')" class="bg-amber-500 hover:bg-amber-400 text-gray-900 px-4 py-2 rounded text-xs font-bold">+ Input Audit</button>
+  <!-- Header & Navigasi Terpisah -->
+  <header class="bg-emerald-800 text-white shadow-md">
+    <div class="container mx-auto px-4 py-4 flex flex-col md:flex-row justify-between items-center gap-4">
+      <div>
+        <h1 class="text-xl font-bold tracking-wide">HHFHC AUDIT SYSTEM</h1>
+        <p class="text-xs text-emerald-200">Hygienic • Healthy • Fresh • Halal • Clean | Monitoring Store & QSS</p>
+      </div>
+      <!-- Menu Navigasi -->
+      <div class="flex flex-wrap gap-2">
+        <button id="navDashboard" onclick="switchTab('dashboard')" class="bg-emerald-700 hover:bg-emerald-600 px-4 py-2 rounded text-xs font-semibold transition">
+          📊 Dashboard Summary
+        </button>
+        <button id="navCharts" onclick="switchTab('charts')" class="bg-emerald-900 hover:bg-emerald-600 px-4 py-2 rounded text-xs font-semibold transition">
+          📈 Grafik Analytics
+        </button>
+        <button id="navAuditForm" onclick="switchTab('auditForm')" class="bg-amber-500 hover:bg-amber-400 text-gray-900 px-4 py-2 rounded text-xs font-bold transition">
+          🔒 + Input Audit
+        </button>
+      </div>
     </div>
   </header>
 
   <main class="container mx-auto p-4 md:p-6">
 
-    <!-- TAB DASHBOARD -->
+    <!-- BAR FILTER DATA -->
+    <div class="bg-white p-4 rounded-xl shadow mb-6 flex flex-col md:flex-row justify-between items-center gap-4">
+      <div class="flex items-center gap-3 w-full md:w-auto">
+        <label for="filterStore" class="text-xs font-bold text-gray-600 whitespace-nowrap">Filter Store:</label>
+        <select id="filterStore" onchange="applyFilter()" class="border rounded-lg p-2 text-xs w-full md:w-48 focus:ring-2 focus:ring-emerald-500 bg-gray-50 font-semibold">
+          <option value="ALL">Semua Store (All Stores)</option>
+          <option value="Pandanwangi">Pandanwangi</option>
+          <option value="Bulak Laut">Bulak Laut</option>
+          <option value="Jatos">Jatos</option>
+          <option value="Cikajang">Cikajang</option>
+          <option value="Cileungsi">Cileungsi</option>
+          <option value="Singa">Singa</option>
+        </select>
+      </div>
+      <div class="text-xs text-gray-500 font-medium">
+        Menampilkan data untuk: <span id="lblFilterTarget" class="font-bold text-emerald-700">Semua Store</span>
+      </div>
+    </div>
+
+    <!-- MENU 1: TAB DASHBOARD SUMMARY -->
     <div id="tabDashboard" class="space-y-6">
       
-      <!-- Ringkasan Statistik -->
+      <!-- Ringkasan Utam Metrics -->
       <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div class="bg-white p-4 rounded-xl shadow border-l-4 border-emerald-500">
           <p class="text-xs font-bold text-gray-400 uppercase">Avg Compliance Score</p>
@@ -37,7 +66,7 @@
           <p id="statActiveTemuan" class="text-3xl font-black text-amber-600 mt-1">0</p>
         </div>
         <div class="bg-white p-4 rounded-xl shadow border-l-4 border-blue-500">
-          <p class="text-xs font-bold text-gray-400 uppercase">Total Store Diaudit</p>
+          <p class="text-xs font-bold text-gray-400 uppercase">Total Audit Terdata</p>
           <p id="statTotalAudit" class="text-3xl font-black text-gray-800 mt-1">0</p>
         </div>
         <div class="bg-white p-4 rounded-xl shadow border-l-4 border-purple-500">
@@ -46,23 +75,38 @@
         </div>
       </div>
 
-      <!-- Grafik -->
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div class="bg-white p-5 rounded-xl shadow">
-          <h3 class="font-bold text-sm text-gray-600 mb-4">Perbandingan Nilai Compliance Per Store (%)</h3>
-          <canvas id="chartStoreScore" height="200"></canvas>
-        </div>
-        <div class="bg-white p-5 rounded-xl shadow">
-          <h3 class="font-bold text-sm text-gray-600 mb-4">Sebaran Temuan Berdasarkan Pillar HHFHC</h3>
-          <canvas id="chartPillar" height="200"></canvas>
+      <!-- Detail Ringkasan Nilai HHFHC Per Pilar -->
+      <div class="bg-white p-5 rounded-xl shadow">
+        <h3 class="font-bold text-sm text-gray-700 mb-3 uppercase tracking-wider">Rata-Rata Compliance Per Pilar HHFHC</h3>
+        <div class="grid grid-cols-2 md:grid-cols-5 gap-3 text-center">
+          <div class="bg-emerald-50 p-3 rounded-lg border border-emerald-100">
+            <p class="text-[11px] font-bold text-emerald-800">Hygienic</p>
+            <p id="avgHygienic" class="text-xl font-black text-emerald-600 mt-1">0.0%</p>
+          </div>
+          <div class="bg-blue-50 p-3 rounded-lg border border-blue-100">
+            <p class="text-[11px] font-bold text-blue-800">Healthy</p>
+            <p id="avgHealthy" class="text-xl font-black text-blue-600 mt-1">0.0%</p>
+          </div>
+          <div class="bg-amber-50 p-3 rounded-lg border border-amber-100">
+            <p class="text-[11px] font-bold text-amber-800">Fresh</p>
+            <p id="avgFresh" class="text-xl font-black text-amber-600 mt-1">0.0%</p>
+          </div>
+          <div class="bg-purple-50 p-3 rounded-lg border border-purple-100">
+            <p class="text-[11px] font-bold text-purple-800">Halal</p>
+            <p id="avgHalal" class="text-xl font-black text-purple-600 mt-1">0.0%</p>
+          </div>
+          <div class="bg-rose-50 p-3 rounded-lg border border-rose-100">
+            <p class="text-[11px] font-bold text-rose-800">Clean</p>
+            <p id="avgClean" class="text-xl font-black text-rose-600 mt-1">0.0%</p>
+          </div>
         </div>
       </div>
 
       <!-- Tabel Action Plan -->
       <div class="bg-white rounded-xl shadow overflow-hidden">
         <div class="p-4 border-b bg-gray-50 flex justify-between items-center">
-          <h3 class="font-bold text-gray-700">Action Plan & Status CAPA Store Leader</h3>
-          <button onclick="loadData()" class="text-xs text-emerald-600 font-bold hover:underline">Refresh Data</button>
+          <h3 class="font-bold text-gray-700 text-sm">Action Plan & Status CAPA Store Leader</h3>
+          <button onclick="loadData()" class="text-xs text-emerald-600 font-bold hover:underline">🔄 Refresh Data</button>
         </div>
         <div class="overflow-x-auto">
           <table class="w-full text-left text-xs">
@@ -70,7 +114,7 @@
               <tr>
                 <th class="p-3">Tanggal</th>
                 <th class="p-3">Store</th>
-                <th class="p-3">Pillar</th>
+                <th class="p-3">Pillar Temuan</th>
                 <th class="p-3">Detail Temuan Auditor</th>
                 <th class="p-3">Target Selesai</th>
                 <th class="p-3">Status Action</th>
@@ -86,7 +130,21 @@
 
     </div>
 
-    <!-- TAB INPUT AUDIT -->
+    <!-- MENU 2: TAB GRAFIK ANALYTICS -->
+    <div id="tabCharts" class="hidden space-y-6">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="bg-white p-5 rounded-xl shadow">
+          <h3 class="font-bold text-sm text-gray-700 mb-4">Perbandingan Nilai Compliance Store (%)</h3>
+          <canvas id="chartStoreScore" height="220"></canvas>
+        </div>
+        <div class="bg-white p-5 rounded-xl shadow">
+          <h3 class="font-bold text-sm text-gray-700 mb-4">Sebaran Temuan Berdasarkan Pilar HHFHC</h3>
+          <canvas id="chartPillar" height="220"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- MENU 3: TAB INPUT AUDIT -->
     <div id="tabAuditForm" class="hidden max-w-xl mx-auto bg-white p-6 rounded-xl shadow">
       <h2 class="text-lg font-bold text-emerald-800 border-b pb-3 mb-4">Input Hasil Audit HHFHC Baru</h2>
       <form id="auditForm" onsubmit="submitForm(event)" class="space-y-4">
@@ -105,7 +163,7 @@
         </div>
 
         <div>
-          <label class="block text-xs font-bold mb-1">Skor Compliance Per Pillar (0 - 100%)</label>
+          <label class="block text-xs font-bold mb-1">Skor Compliance Per Pilar (0 - 100%)</label>
           <div class="grid grid-cols-5 gap-2 bg-emerald-50 p-3 rounded-lg">
             <div>
               <label class="text-[10px] font-bold block mb-1">Hygienic</label>

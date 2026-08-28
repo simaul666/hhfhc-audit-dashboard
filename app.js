@@ -1,10 +1,13 @@
-// GANTI TEKS DI DALAM TANDA KUTIP DENGAN URL WEB APP GOOGLE APPS SCRIPT ANDA
+// 1. Pastikan isi URL API Google Apps Script Anda di sini
 const API_URL = "https://script.google.com/macros/s/AKfycbyd1UWrm8xPfCGYlQOXbPnzMfq4rWTKypsfRxbIljNdSBVvURmve_-FTM6M18wLZwFSxQ/exec";
 
+// 2. PIN Rahasia Input Audit
+const SECRET_PIN = "1234";
+
+let rawAuditData = []; // Menyimpan data mentah
 let chartStoreInstance = null;
 let chartPillarInstance = null;
 
-// Mengubah input koma (,) atau titik (.) menjadi angka desimal valid
 function parseDecimalInput(val) {
   if (!val) return 0;
   let cleanStr = val.toString().replace(',', '.');
@@ -12,14 +15,41 @@ function parseDecimalInput(val) {
   return isNaN(num) ? 0 : num;
 }
 
+// Navigasi Menu Terpisah
 function switchTab(tab) {
+  const btnDashboard = document.getElementById('navDashboard');
+  const btnCharts = document.getElementById('navCharts');
+  const btnAuditForm = document.getElementById('navAuditForm');
+
+  const tabDashboard = document.getElementById('tabDashboard');
+  const tabCharts = document.getElementById('tabCharts');
+  const tabAuditForm = document.getElementById('tabAuditForm');
+
+  // Reset Style Tombol
+  btnDashboard.className = "bg-emerald-900 hover:bg-emerald-600 px-4 py-2 rounded text-xs font-semibold transition";
+  btnCharts.className = "bg-emerald-900 hover:bg-emerald-600 px-4 py-2 rounded text-xs font-semibold transition";
+  btnAuditForm.className = "bg-amber-500 hover:bg-amber-400 text-gray-900 px-4 py-2 rounded text-xs font-bold transition";
+
   if (tab === 'dashboard') {
-    document.getElementById('tabDashboard').classList.remove('hidden');
-    document.getElementById('tabAuditForm').classList.add('hidden');
-    loadData();
-  } else {
-    document.getElementById('tabDashboard').classList.add('hidden');
-    document.getElementById('tabAuditForm').classList.remove('hidden');
+    tabDashboard.classList.remove('hidden');
+    tabCharts.classList.add('hidden');
+    tabAuditForm.classList.add('hidden');
+    btnDashboard.className = "bg-emerald-600 px-4 py-2 rounded text-xs font-semibold shadow transition";
+  } else if (tab === 'charts') {
+    tabDashboard.classList.add('hidden');
+    tabCharts.classList.remove('hidden');
+    tabAuditForm.classList.add('hidden');
+    btnCharts.className = "bg-emerald-600 px-4 py-2 rounded text-xs font-semibold shadow transition";
+    applyFilter(); // Render ulang grafik saat tab dibuka
+  } else if (tab === 'auditForm') {
+    const userPin = prompt("Masukkan PIN Khusus Auditor untuk Mengisi Audit:");
+    if (userPin === SECRET_PIN) {
+      tabDashboard.classList.add('hidden');
+      tabCharts.classList.add('hidden');
+      tabAuditForm.classList.remove('hidden');
+    } else if (userPin !== null) {
+      alert("PIN Salah! Akses pengisian audit ditolak.");
+    }
   }
 }
 
@@ -28,16 +58,26 @@ async function loadData() {
   tbody.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-gray-400">Memuat data audit...</td></tr>`;
 
   try {
-    const response = await fetch(API_URL, {
-      method: 'GET',
-      redirect: 'follow'
-    });
-    const data = await response.json();
-    renderDashboard(data);
+    const response = await fetch(API_URL, { method: 'GET', redirect: 'follow' });
+    rawAuditData = await response.json();
+    applyFilter();
   } catch (error) {
     console.error("Gagal mengambil data:", error);
-    tbody.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-red-500 font-bold">Gagal memuat data. Pastikan URL API Apps Script benar dan Deployment diset ke "Anyone".</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-red-500 font-bold">Gagal memuat data. Periksa koneksi internet atau URL API.</td></tr>`;
   }
+}
+
+// Fungsi Filter Per Store
+function applyFilter() {
+  const selectedStore = document.getElementById('filterStore').value;
+  document.getElementById('lblFilterTarget').innerText = selectedStore === 'ALL' ? 'Semua Store' : selectedStore;
+
+  let filteredData = rawAuditData;
+  if (selectedStore !== 'ALL') {
+    filteredData = rawAuditData.filter(item => item.Store === selectedStore);
+  }
+
+  renderDashboard(filteredData);
 }
 
 function renderDashboard(data) {
@@ -45,21 +85,35 @@ function renderDashboard(data) {
   tbody.innerHTML = '';
 
   if (!data || data.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-gray-400">Belum ada data audit. Silakan klik tombol "+ Input Audit".</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-gray-400">Belum ada data audit untuk filter ini.</td></tr>`;
     document.getElementById('statAvgScore').innerText = '0.0%';
     document.getElementById('statActiveTemuan').innerText = '0';
     document.getElementById('statTotalAudit').innerText = '0';
+    document.getElementById('avgHygienic').innerText = '0.0%';
+    document.getElementById('avgHealthy').innerText = '0.0%';
+    document.getElementById('avgFresh').innerText = '0.0%';
+    document.getElementById('avgHalal').innerText = '0.0%';
+    document.getElementById('avgClean').innerText = '0.0%';
+    renderCharts({}, { Hygienic: 0, Healthy: 0, Fresh: 0, Halal: 0, Clean: 0 });
     return;
   }
 
   let totalAvg = 0;
   let activeTemuan = 0;
+
+  let sumH = 0, sumHe = 0, sumF = 0, sumHa = 0, sumC = 0;
   let pillarCount = { Hygienic: 0, Healthy: 0, Fresh: 0, Halal: 0, Clean: 0 };
   let storeScores = {};
 
   data.forEach(item => {
     const currentScore = parseDecimalInput(item.Average_Score);
     totalAvg += currentScore;
+
+    sumH += parseDecimalInput(item.Score_Hygienic);
+    sumHe += parseDecimalInput(item.Score_Healthy);
+    sumF += parseDecimalInput(item.Score_Fresh);
+    sumHa += parseDecimalInput(item.Score_Halal);
+    sumC += parseDecimalInput(item.Score_Clean);
 
     if (item.Status !== 'Done') activeTemuan++;
     if (pillarCount[item.Pillar_Temuan] !== undefined) pillarCount[item.Pillar_Temuan]++;
@@ -86,10 +140,17 @@ function renderDashboard(data) {
     `;
   });
 
-  const overallAvg = (totalAvg / data.length).toFixed(1);
-  document.getElementById('statAvgScore').innerText = `${overallAvg}%`;
+  const totalItem = data.length;
+  document.getElementById('statAvgScore').innerText = `${(totalAvg / totalItem).toFixed(1)}%`;
   document.getElementById('statActiveTemuan').innerText = activeTemuan;
-  document.getElementById('statTotalAudit').innerText = Object.keys(storeScores).length;
+  document.getElementById('statTotalAudit').innerText = totalItem;
+
+  // Render Rata-rata Pilar HHFHC
+  document.getElementById('avgHygienic').innerText = `${(sumH / totalItem).toFixed(1)}%`;
+  document.getElementById('avgHealthy').innerText = `${(sumHe / totalItem).toFixed(1)}%`;
+  document.getElementById('avgFresh').innerText = `${(sumF / totalItem).toFixed(1)}%`;
+  document.getElementById('avgHalal').innerText = `${(sumHa / totalItem).toFixed(1)}%`;
+  document.getElementById('avgClean').innerText = `${(sumC / totalItem).toFixed(1)}%`;
 
   renderCharts(storeScores, pillarCount);
 }
@@ -112,15 +173,7 @@ function renderCharts(storeScores, pillarCount) {
     options: {
       responsive: true,
       scales: {
-        y: {
-          min: 0,
-          max: 100,
-          ticks: {
-            callback: function(value) {
-              return value + '%';
-            }
-          }
-        }
+        y: { min: 0, max: 100, ticks: { callback: v => v + '%' } }
       }
     }
   });
@@ -156,7 +209,7 @@ async function submitForm(e) {
     pillar: document.getElementById('inputPillar').value,
     temuan: document.getElementById('inputTemuan').value,
     dueDate: document.getElementById('inputDueDate').value,
-    auditor: "Auditor HHFHC"
+    auditor: "Irfan Maulana"
   };
 
   try {
@@ -168,6 +221,7 @@ async function submitForm(e) {
     alert("Audit berhasil disimpan!");
     document.getElementById('auditForm').reset();
     switchTab('dashboard');
+    loadData();
   } catch (err) {
     alert("Gagal menyimpan audit.");
     console.error(err);
@@ -178,6 +232,12 @@ async function submitForm(e) {
 }
 
 async function updateStatus(id, currentStatus) {
+  const userPin = prompt("Masukkan PIN untuk Mengubah Status Action Plan:");
+  if (userPin !== SECRET_PIN) {
+    if (userPin !== null) alert("PIN Salah! Gagal mengubah status.");
+    return;
+  }
+
   let nextStatus = currentStatus === 'Pending' ? 'In Progress' : (currentStatus === 'In Progress' ? 'Done' : 'Pending');
   
   try {
