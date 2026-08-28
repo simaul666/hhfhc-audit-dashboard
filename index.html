@@ -65,10 +65,16 @@
     <div id="tabDashboard" class="hidden space-y-6">
       
       <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div class="bg-white p-4 rounded-xl shadow border-l-4 border-emerald-500">
-          <p class="text-xs font-bold text-gray-400 uppercase">Avg Compliance Score</p>
-          <p id="statAvgScore" class="text-3xl font-black text-gray-800 mt-1">0.0%</p>
+        <div class="bg-white p-4 rounded-xl shadow border-l-4 border-emerald-500 flex flex-col justify-between">
+          <div>
+            <p class="text-xs font-bold text-gray-500 uppercase tracking-wide">Rata-Rata Nilai HHFHC</p>
+            <p id="statAvgScore" class="text-3xl font-black text-gray-800 mt-1">0.0%</p>
+          </div>
+          <p class="text-[10px] text-gray-400 mt-2 italic font-medium leading-tight border-t pt-1">
+            *Bukan skor terbaru, melainkan akumulasi rata-rata dari awal audit hingga sekarang.
+          </p>
         </div>
+
         <div class="bg-white p-4 rounded-xl shadow border-l-4 border-amber-500">
           <p class="text-xs font-bold text-gray-400 uppercase">Total Temuan Aktif</p>
           <p id="statActiveTemuan" class="text-3xl font-black text-amber-600 mt-1">0</p>
