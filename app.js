@@ -1,5 +1,5 @@
 // 1. Pastikan isi URL Web App Google Apps Script Anda di sini
-const API_URL = "https://script.google.com/macros/s/AKfycbyd1UWrm8xPfCGYlQOXbPnzMfq4rWTKypsfRxbIljNdSBVvURmve_-FTM6M18wLZwFSxQ/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbyhZZoZUOfGvZR7NnOeb__6RyDzP_yZ3QS39SHnGvLzIpYqgXE271-zh2XeeiA0r8YVwg/exec";
 
 // 2. PIN Rahasia Input Audit
 const SECRET_PIN = "1234";
@@ -7,6 +7,7 @@ const SECRET_PIN = "1234";
 let rawAuditData = [];
 let chartStoreInstance = null;
 let chartPillarInstance = null;
+let findingCounter = 0;
 
 // Pembersih angka desimal super aman
 function cleanNumber(val) {
@@ -16,7 +17,70 @@ function cleanNumber(val) {
   return isNaN(num) ? 0 : num;
 }
 
-// Navigasi Menu Terpisah (Default ke Charts / Update Score)
+// Fungsi Menambah Input Temuan Baru (Multiple Findings)
+function addFindingRow() {
+  findingCounter++;
+  const container = document.getElementById('findingsContainer');
+  const rowId = `finding_row_${findingCounter}`;
+
+  const html = `
+    <div id="${rowId}" class="bg-white p-3 rounded border border-gray-200 relative space-y-2 shadow-sm">
+      <div class="flex justify-between items-center border-b pb-2">
+        <span class="text-[11px] font-bold text-emerald-700">Temuan #${findingCounter}</span>
+        ${findingCounter > 1 ? `<button type="button" onclick="removeFindingRow('${rowId}')" class="text-red-500 font-bold text-[10px] hover:underline">Hapus</button>` : ''}
+      </div>
+      
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
+        <div>
+          <label class="block text-[10px] font-bold mb-1">Tingkat & Pilar</label>
+          <div class="flex gap-1">
+            <select class="finding-level border rounded p-1 text-xs w-1/3 bg-gray-50">
+              <option value="Minor">Minor</option>
+              <option value="Mayor">Mayor</option>
+              <option value="Kritis">Kritis</option>
+            </select>
+            <select class="finding-pillar border rounded p-1 text-xs w-2/3 bg-gray-50">
+              <option value="Hygiene">Hygiene</option>
+              <option value="Healthy">Healthy</option>
+              <option value="Fresh">Fresh</option>
+              <option value="Halal">Halal</option>
+              <option value="Clean">Clean</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-[10px] font-bold mb-1">Kode / Sub-Pilar (opsional)</label>
+          <input type="text" class="finding-code border rounded p-1 text-xs w-full" placeholder="Misal: H1, He1, C7" />
+        </div>
+
+        <div>
+          <label class="block text-[10px] font-bold mb-1">Target Selesai Perbaikan</label>
+          <input type="date" class="finding-duedate border rounded p-1 text-xs w-full" required />
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-[10px] font-bold mb-1">Detail Temuan Auditor</label>
+        <input type="text" class="finding-detail border rounded p-1.5 text-xs w-full" placeholder="Jelaskan temuan ketidaksesuaian..." required />
+      </div>
+
+      <div>
+        <label class="block text-[10px] font-bold mb-1">Tindakan Awal (Koreksi Langsung)</label>
+        <input type="text" class="finding-action border rounded p-1.5 text-xs w-full" placeholder="Contoh: Peneguran untuk memakai masker / Retraining cook" />
+      </div>
+    </div>
+  `;
+
+  container.insertAdjacentHTML('beforeend', html);
+}
+
+function removeFindingRow(rowId) {
+  const elem = document.getElementById(rowId);
+  if (elem) elem.remove();
+}
+
+// Navigasi Menu
 function switchTab(tab) {
   const btnCharts = document.getElementById('navCharts');
   const btnDashboard = document.getElementById('navDashboard');
@@ -55,7 +119,7 @@ function switchTab(tab) {
 
 async function loadData() {
   const tbody = document.getElementById('tableBody');
-  tbody.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-gray-400">Memuat data audit...</td></tr>`;
+  tbody.innerHTML = `<tr><td colspan="8" class="p-4 text-center text-gray-400">Memuat data audit...</td></tr>`;
 
   try {
     const response = await fetch(API_URL, { method: 'GET', redirect: 'follow' });
@@ -63,7 +127,7 @@ async function loadData() {
     applyFilter();
   } catch (error) {
     console.error("Gagal mengambil data:", error);
-    tbody.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-red-500 font-bold">Gagal memuat data. Periksa koneksi internet atau URL API.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="8" class="p-4 text-center text-red-500 font-bold">Gagal memuat data. Periksa koneksi internet atau URL API.</td></tr>`;
   }
 }
 
@@ -87,7 +151,7 @@ function renderDashboard(data) {
   tbody.innerHTML = '';
 
   if (!data || data.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-gray-400">Belum ada data audit untuk filter ini.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="8" class="p-4 text-center text-gray-400">Belum ada data audit untuk filter ini.</td></tr>`;
     document.getElementById('statAvgScore').innerText = '0.0%';
     document.getElementById('statActiveTemuan').innerText = '0';
     document.getElementById('statTotalAudit').innerText = '0';
@@ -96,7 +160,7 @@ function renderDashboard(data) {
     document.getElementById('avgFresh').innerText = '0.0%';
     document.getElementById('avgHalal').innerText = '0.0%';
     document.getElementById('avgClean').innerText = '0.0%';
-    renderCharts({}, { Hygienic: 0, Healthy: 0, Fresh: 0, Halal: 0, Clean: 0 });
+    renderCharts({}, { Hygiene: 0, Healthy: 0, Fresh: 0, Halal: 0, Clean: 0 });
     return;
   }
 
@@ -104,7 +168,7 @@ function renderDashboard(data) {
   let activeTemuan = 0;
 
   let sumH = 0, sumHe = 0, sumF = 0, sumHa = 0, sumC = 0;
-  let pillarCount = { Hygienic: 0, Healthy: 0, Fresh: 0, Halal: 0, Clean: 0 };
+  let pillarCount = { Hygiene: 0, Healthy: 0, Fresh: 0, Halal: 0, Clean: 0 };
   let storeScores = {};
 
   data.forEach(item => {
@@ -129,7 +193,7 @@ function renderDashboard(data) {
     let status = item.Status || item.status || 'Pending';
     if (status !== 'Done') activeTemuan++;
 
-    let pillar = item.Pillar_Temuan || item.Pillar || item.pillar || 'Hygienic';
+    let pillar = item.Pillar_Temuan || item.Pillar || item.pillar || 'Hygiene';
     if (pillarCount[pillar] !== undefined) pillarCount[pillar]++;
 
     let storeName = item.Store || item.store || 'Unknown';
@@ -141,14 +205,17 @@ function renderDashboard(data) {
     let itemID = item.ID || item.id || '';
     let tgl = item.Tanggal || item.tanggal || '-';
     let detail = item.Detail_Temuan || item.Detail || item.temuan || '-';
+    let tindakanAwal = item.Tindakan_Awal || item.tindakan || '-';
     let target = item.Target_Selesai || item.DueDate || item.dueDate || '-';
+    let kodeSub = item.Kode_Sub || item.kode || '';
 
     tbody.innerHTML += `
       <tr class="hover:bg-gray-50 border-b">
         <td class="p-3">${tgl}</td>
         <td class="p-3 font-bold">${storeName}</td>
-        <td class="p-3"><span class="px-2 py-0.5 rounded bg-gray-100 border text-[10px]">${pillar}</span></td>
+        <td class="p-3"><span class="px-2 py-0.5 rounded bg-gray-100 border text-[10px]">${pillar} ${kodeSub ? `(${kodeSub})` : ''}</span></td>
         <td class="p-3">${detail}</td>
+        <td class="p-3 text-gray-600 font-medium">${tindakanAwal}</td>
         <td class="p-3">${target}</td>
         <td class="p-3"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${badgeColor}">${status}</span></td>
         <td class="p-3">
@@ -212,24 +279,54 @@ function renderCharts(storeScores, pillarCount) {
   });
 }
 
+// Submit Multiple Findings ke Google Sheets
 async function submitForm(e) {
   e.preventDefault();
   const btn = document.getElementById('btnSubmit');
   btn.innerText = "Mengirim...";
   btn.disabled = true;
 
+  const store = document.getElementById('inputStore').value;
+  const tglWaktu = document.getElementById('inputTanggalWaktu').value;
+  const auditor = document.getElementById('inputAuditor').value;
+  const storeLeader = document.getElementById('inputStoreLeader').value;
+  const auditKe = document.getElementById('inputAuditKe').value;
+  const predikat = document.getElementById('inputPredikat').value;
+
+  const scoreH = cleanNumber(document.getElementById('scoreH').value);
+  const scoreHe = cleanNumber(document.getElementById('scoreHe').value);
+  const scoreF = cleanNumber(document.getElementById('scoreF').value);
+  const scoreHa = cleanNumber(document.getElementById('scoreHa').value);
+  const scoreC = cleanNumber(document.getElementById('scoreC').value);
+
+  const findingRows = document.querySelectorAll('#findingsContainer > div');
+  const findingsList = [];
+
+  findingRows.forEach(row => {
+    findingsList.push({
+      level: row.querySelector('.finding-level').value,
+      pillar: row.querySelector('.finding-pillar').value,
+      code: row.querySelector('.finding-code').value,
+      dueDate: row.querySelector('.finding-duedate').value,
+      detail: row.querySelector('.finding-detail').value,
+      action: row.querySelector('.finding-action').value
+    });
+  });
+
   const payload = {
-    action: "CREATE",
-    store: document.getElementById('inputStore').value,
-    scoreH: cleanNumber(document.getElementById('scoreH').value),
-    scoreHe: cleanNumber(document.getElementById('scoreHe').value),
-    scoreF: cleanNumber(document.getElementById('scoreF').value),
-    scoreHa: cleanNumber(document.getElementById('scoreHa').value),
-    scoreC: cleanNumber(document.getElementById('scoreC').value),
-    pillar: document.getElementById('inputPillar').value,
-    temuan: document.getElementById('inputTemuan').value,
-    dueDate: document.getElementById('inputDueDate').value,
-    auditor: "Irfan Maulana"
+    action: "CREATE_MULTIPLE",
+    store: store,
+    tanggalWaktu: tglWaktu,
+    auditor: auditor,
+    storeLeader: storeLeader,
+    auditKe: auditKe,
+    predikat: predikat,
+    scoreH: scoreH,
+    scoreHe: scoreHe,
+    scoreF: scoreF,
+    scoreHa: scoreHa,
+    scoreC: scoreC,
+    findings: findingsList
   };
 
   try {
@@ -238,15 +335,17 @@ async function submitForm(e) {
       body: JSON.stringify(payload),
       redirect: 'follow'
     });
-    alert("Audit berhasil disimpan!");
+    alert("Seluruh data audit dan temuan berhasil disimpan!");
     document.getElementById('auditForm').reset();
+    document.getElementById('findingsContainer').innerHTML = '';
+    addFindingRow();
     switchTab('charts');
     loadData();
   } catch (err) {
     alert("Gagal menyimpan audit.");
     console.error(err);
   } finally {
-    btn.innerText = "Simpan Data Audit";
+    btn.innerText = "Simpan Seluruh Data Audit & Temuan";
     btn.disabled = false;
   }
 }
@@ -272,4 +371,7 @@ async function updateStatus(id, currentStatus) {
   }
 }
 
-window.onload = loadData;
+window.onload = function() {
+  addFindingRow();
+  loadData();
+};

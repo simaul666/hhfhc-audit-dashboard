@@ -3,18 +3,20 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Dashboard Monitoring Audit HHFHC</title>
+  <title>Dashboard Monitoring Audit HHFHC - Labbaik Chicken</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body class="bg-gray-100 text-gray-800">
 
+  <!-- Header & Navigasi -->
   <header class="bg-emerald-800 text-white shadow-md">
     <div class="container mx-auto px-4 py-4 flex flex-col md:flex-row justify-between items-center gap-4">
       <div>
-        <h1 class="text-xl font-bold tracking-wide">HHFHC AUDIT SYSTEM</h1>
+        <h1 class="text-xl font-bold tracking-wide">LABBAIK CHICKEN - HHFHC AUDIT SYSTEM</h1>
         <p class="text-xs text-emerald-200">Hygienic • Healthy • Fresh • Halal • Clean | Monitoring Store & QSS</p>
       </div>
+      <!-- Menu Navigasi -->
       <div class="flex flex-wrap gap-2">
         <button id="navCharts" onclick="switchTab('charts')" class="bg-emerald-600 px-4 py-2 rounded text-xs font-semibold shadow transition">
           📈 Update Score HHFHC Area 1.1
@@ -31,17 +33,23 @@
 
   <main class="container mx-auto p-4 md:p-6">
 
+    <!-- BAR FILTER DATA -->
     <div class="bg-white p-4 rounded-xl shadow mb-6 flex flex-col md:flex-row justify-between items-center gap-4">
       <div class="flex items-center gap-3 w-full md:w-auto">
         <label for="filterStore" class="text-xs font-bold text-gray-600 whitespace-nowrap">Filter Store:</label>
-        <select id="filterStore" onchange="applyFilter()" class="border rounded-lg p-2 text-xs w-full md:w-48 focus:ring-2 focus:ring-emerald-500 bg-gray-50 font-semibold">
+        <select id="filterStore" onchange="applyFilter()" class="border rounded-lg p-2 text-xs w-full md:w-56 focus:ring-2 focus:ring-emerald-500 bg-gray-50 font-semibold">
           <option value="ALL">Semua Store (All Stores)</option>
           <option value="Pandanwangi">Pandanwangi</option>
-          <option value="Bulak Laut">Bulak Laut</option>
+          <option value="Cileunyi">Cileunyi</option>
           <option value="Jatos">Jatos</option>
-          <option value="Cikajang">Cikajang</option>
-          <option value="Cileungsi">Cileungsi</option>
+          <option value="Cipasir">Cipasir</option>
+          <option value="Legok Jabar">Legok Jabar</option>
+          <option value="Simpang Lima">Simpang Lima</option>
+          <option value="Cimanuk">Cimanuk</option>
           <option value="Singa">Singa</option>
+          <option value="Siliwangi">Siliwangi</option>
+          <option value="Indihiang">Indihiang</option>
+          <option value="Bulak Laut">Bulak Laut</option>
         </select>
       </div>
       <div class="text-xs text-gray-500 font-medium">
@@ -49,6 +57,7 @@
       </div>
     </div>
 
+    <!-- MENU 1: UPDATE SCORE HHFHC AREA 1.1 (GRAFIK ANALYTICS) -->
     <div id="tabCharts" class="space-y-6">
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div class="bg-white p-5 rounded-xl shadow">
@@ -62,8 +71,10 @@
       </div>
     </div>
 
+    <!-- MENU 2: DASHBOARD SUMMARY -->
     <div id="tabDashboard" class="hidden space-y-6">
       
+      <!-- Ringkasan Utama Metrics -->
       <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div class="bg-white p-4 rounded-xl shadow border-l-4 border-emerald-500 flex flex-col justify-between">
           <div>
@@ -89,32 +100,34 @@
         </div>
       </div>
 
+      <!-- Detail Ringkasan Nilai HHFHC Per Pilar -->
       <div class="bg-white p-5 rounded-xl shadow">
         <h3 class="font-bold text-sm text-gray-700 mb-3 uppercase tracking-wider">Rata-Rata Compliance Per Pilar HHFHC</h3>
         <div class="grid grid-cols-2 md:grid-cols-5 gap-3 text-center">
           <div class="bg-emerald-50 p-3 rounded-lg border border-emerald-100">
-            <p class="text-[11px] font-bold text-emerald-800">Hygienic</p>
+            <p class="text-[11px] font-bold text-emerald-800">Hygiene (Bobot 20)</p>
             <p id="avgHygienic" class="text-xl font-black text-emerald-600 mt-1">0.0%</p>
           </div>
           <div class="bg-blue-50 p-3 rounded-lg border border-blue-100">
-            <p class="text-[11px] font-bold text-blue-800">Healthy</p>
+            <p class="text-[11px] font-bold text-blue-800">Healthy (Bobot 15)</p>
             <p id="avgHealthy" class="text-xl font-black text-blue-600 mt-1">0.0%</p>
           </div>
           <div class="bg-amber-50 p-3 rounded-lg border border-amber-100">
-            <p class="text-[11px] font-bold text-amber-800">Fresh</p>
+            <p class="text-[11px] font-bold text-amber-800">Fresh (Bobot 20)</p>
             <p id="avgFresh" class="text-xl font-black text-amber-600 mt-1">0.0%</p>
           </div>
           <div class="bg-purple-50 p-3 rounded-lg border border-purple-100">
-            <p class="text-[11px] font-bold text-purple-800">Halal</p>
+            <p class="text-[11px] font-bold text-purple-800">Halal (Bobot 25)</p>
             <p id="avgHalal" class="text-xl font-black text-purple-600 mt-1">0.0%</p>
           </div>
           <div class="bg-rose-50 p-3 rounded-lg border border-rose-100">
-            <p class="text-[11px] font-bold text-rose-800">Clean</p>
+            <p class="text-[11px] font-bold text-rose-800">Clean (Bobot 20)</p>
             <p id="avgClean" class="text-xl font-black text-rose-600 mt-1">0.0%</p>
           </div>
         </div>
       </div>
 
+      <!-- Tabel Action Plan -->
       <div class="bg-white rounded-xl shadow overflow-hidden">
         <div class="p-4 border-b bg-gray-50 flex justify-between items-center">
           <h3 class="font-bold text-gray-700 text-sm">Action Plan & Status CAPA Store Leader</h3>
@@ -126,15 +139,16 @@
               <tr>
                 <th class="p-3">Tanggal</th>
                 <th class="p-3">Store</th>
-                <th class="p-3">Pillar Temuan</th>
+                <th class="p-3">Pillar & Kode</th>
                 <th class="p-3">Detail Temuan Auditor</th>
+                <th class="p-3">Tindakan Awal</th>
                 <th class="p-3">Target Selesai</th>
                 <th class="p-3">Status Action</th>
-                <th class="p-3">Update Leader</th>
+                <th class="p-3">Update</th>
               </tr>
             </thead>
             <tbody id="tableBody" class="divide-y">
-              <tr><td colspan="7" class="p-4 text-center text-gray-400">Memuat data audit...</td></tr>
+              <tr><td colspan="8" class="p-4 text-center text-gray-400">Memuat data audit...</td></tr>
             </tbody>
           </table>
         </div>
@@ -142,92 +156,123 @@
 
     </div>
 
-    <div id="tabAuditForm" class="hidden max-w-xl mx-auto bg-white p-6 rounded-xl shadow">
-      <h2 class="text-lg font-bold text-emerald-800 border-b pb-3 mb-4">Input Hasil Audit HHFHC Baru</h2>
-      <form id="auditForm" onsubmit="submitForm(event)" class="space-y-4">
-        
-        <div>
-          <label class="block text-xs font-bold mb-1">Pilih Store Audit</label>
-          <select id="inputStore" required class="w-full border rounded p-2 text-xs focus:ring-2 focus:ring-emerald-500">
-            <option value="">-- Pilih Store --</option>
-            <option value="Pandanwangi">Pandanwangi</option>
-            <option value="Bulak Laut">Bulak Laut</option>
-            <option value="Jatos">Jatos</option>
-            <option value="Cileunyi">Cileunyi</option>
-            <option value="Cipasir">Cipasir</option>
-            <option value="Legok Jabar">Legok Jabar</option>
-            <option value="Simpang Lima">Simpang Lima</option>
-            <option value="Cimanuk">Cimanuk</option>
-            <option value="Singaparna">Singaparna</option>
-            <option value="Siliwangi">Siliwangi</option>
-            <option value="Indihiang">Indihiang</option>          
-</select>
-        </div>
+    <!-- MENU 3: TAB INPUT AUDIT (FORMAT PDF LAPORAN QA HASIL AUDIT) -->
+    <div id="tabAuditForm" class="hidden max-w-3xl mx-auto bg-white p-6 rounded-xl shadow space-y-6">
+      <div class="border-b pb-3">
+        <h2 class="text-lg font-bold text-emerald-800">Input Laporan Audit QA HHFHC</h2>
+        <p class="text-xs text-gray-500">Sesuai Format Laporan Audit Quality Assurance Labbaik Chicken</p>
+      </div>
 
-        <div>
-          <label class="block text-xs font-bold mb-1">Skor Compliance Per Pilar (0 - 100%)</label>
-          <div class="grid grid-cols-5 gap-2 bg-emerald-50 p-3 rounded-lg">
+      <form id="auditForm" onsubmit="submitForm(event)" class="space-y-6">
+        
+        <!-- Section 1: Identitas Audit -->
+        <div class="bg-gray-50 p-4 rounded-lg border space-y-3">
+          <h3 class="text-xs font-bold text-emerald-800 uppercase tracking-wider">1. Identitas Audit</h3>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
             <div>
-              <label class="text-[10px] font-bold block mb-1">Hygienic</label>
-              <div class="relative">
-                <input type="text" inputmode="decimal" id="scoreH" placeholder="0.0" class="w-full border rounded p-1 pr-4 text-xs text-center font-bold" required />
-                <span class="absolute right-1 top-1 text-xs text-gray-400 font-bold">%</span>
-              </div>
+              <label class="block text-[11px] font-bold mb-1">Pilih Store</label>
+              <select id="inputStore" required class="w-full border rounded p-2 text-xs bg-white focus:ring-2 focus:ring-emerald-500 font-semibold">
+                <option value="">-- Pilih Store --</option>
+                <option value="Pandanwangi">Pandanwangi</option>
+                <option value="Cileunyi">Cileunyi</option>
+                <option value="Jatos">Jatos</option>
+                <option value="Cipasir">Cipasir</option>
+                <option value="Legok Jabar">Legok Jabar</option>
+                <option value="Simpang Lima">Simpang Lima</option>
+                <option value="Cimanuk">Cimanuk</option>
+                <option value="Singa">Singa</option>
+                <option value="Siliwangi">Siliwangi</option>
+                <option value="Indihiang">Indihiang</option>
+                <option value="Bulak Laut">Bulak Laut</option>
+              </select>
             </div>
             <div>
-              <label class="text-[10px] font-bold block mb-1">Healthy</label>
-              <div class="relative">
-                <input type="text" inputmode="decimal" id="scoreHe" placeholder="0.0" class="w-full border rounded p-1 pr-4 text-xs text-center font-bold" required />
-                <span class="absolute right-1 top-1 text-xs text-gray-400 font-bold">%</span>
-              </div>
+              <label class="block text-[11px] font-bold mb-1">Tanggal & Waktu Audit</label>
+              <input type="datetime-local" id="inputTanggalWaktu" required class="w-full border rounded p-1.5 text-xs bg-white" />
             </div>
             <div>
-              <label class="text-[10px] font-bold block mb-1">Fresh</label>
-              <div class="relative">
-                <input type="text" inputmode="decimal" id="scoreF" placeholder="0.0" class="w-full border rounded p-1 pr-4 text-xs text-center font-bold" required />
-                <span class="absolute right-1 top-1 text-xs text-gray-400 font-bold">%</span>
-              </div>
+              <label class="block text-[11px] font-bold mb-1">Auditor</label>
+              <input type="text" id="inputAuditor" value="Irfan Maulana" required class="w-full border rounded p-2 text-xs bg-white font-semibold" />
             </div>
             <div>
-              <label class="text-[10px] font-bold block mb-1">Halal</label>
-              <div class="relative">
-                <input type="text" inputmode="decimal" id="scoreHa" placeholder="0.0" class="w-full border rounded p-1 pr-4 text-xs text-center font-bold" required />
-                <span class="absolute right-1 top-1 text-xs text-gray-400 font-bold">%</span>
-              </div>
+              <label class="block text-[11px] font-bold mb-1">Store Leader</label>
+              <input type="text" id="inputStoreLeader" placeholder="Contoh: Aris" required class="w-full border rounded p-2 text-xs bg-white" />
             </div>
             <div>
-              <label class="text-[10px] font-bold block mb-1">Clean</label>
-              <div class="relative">
-                <input type="text" inputmode="decimal" id="scoreC" placeholder="0.0" class="w-full border rounded p-1 pr-4 text-xs text-center font-bold" required />
-                <span class="absolute right-1 top-1 text-xs text-gray-400 font-bold">%</span>
-              </div>
+              <label class="block text-[11px] font-bold mb-1">Audit Ke-</label>
+              <input type="number" id="inputAuditKe" placeholder="1" value="1" min="1" required class="w-full border rounded p-2 text-xs bg-white" />
+            </div>
+            <div>
+              <label class="block text-[11px] font-bold mb-1">Predikat Kelulusan</label>
+              <select id="inputPredikat" class="w-full border rounded p-2 text-xs bg-white font-semibold">
+                <option value="Lulus">Lulus</option>
+                <option value="Lulus dengan Perbaikan" selected>Lulus dengan Perbaikan</option>
+                <option value="Tidak Lulus">Tidak Lulus</option>
+              </select>
             </div>
           </div>
         </div>
 
-        <div>
-          <label class="block text-xs font-bold mb-1">Pillar Temuan Utama</label>
-          <select id="inputPillar" class="w-full border rounded p-2 text-xs">
-            <option value="Hygienic">Hygienic (Kebersihan Diri Crew)</option>
-            <option value="Healthy">Healthy (Prosedur Higienis & Suhu)</option>
-            <option value="Fresh">Fresh (Kualitas & Tanggal Expired)</option>
-            <option value="Halal">Halal (Penyimpanan & Bebas Kontaminasi)</option>
-            <option value="Clean">Clean (Kebersihan Alat & Area)</option>
-          </select>
+        <!-- Section 2: Hasil Per Unsur HHFHC & Ringkasan Temuan -->
+        <div class="bg-gray-50 p-4 rounded-lg border space-y-4">
+          <h3 class="text-xs font-bold text-emerald-800 uppercase tracking-wider">2. Skor Per Unsur HHFHC (Pilar) & Ringkasan Temuan</h3>
+          
+          <div class="grid grid-cols-5 gap-2 text-center bg-emerald-50 p-3 rounded-lg border border-emerald-100">
+            <div>
+              <label class="text-[10px] font-bold block mb-1">Hygiene (%)</label>
+              <input type="text" inputmode="decimal" id="scoreH" placeholder="84" class="w-full border rounded p-1 text-xs text-center font-bold" required />
+            </div>
+            <div>
+              <label class="text-[10px] font-bold block mb-1">Healthy (%)</label>
+              <input type="text" inputmode="decimal" id="scoreHe" placeholder="83" class="w-full border rounded p-1 text-xs text-center font-bold" required />
+            </div>
+            <div>
+              <label class="text-[10px] font-bold block mb-1">Fresh (%)</label>
+              <input type="text" inputmode="decimal" id="scoreF" placeholder="88" class="w-full border rounded p-1 text-xs text-center font-bold" required />
+            </div>
+            <div>
+              <label class="text-[10px] font-bold block mb-1">Halal (%)</label>
+              <input type="text" inputmode="decimal" id="scoreHa" placeholder="94" class="w-full border rounded p-1 text-xs text-center font-bold" required />
+            </div>
+            <div>
+              <label class="text-[10px] font-bold block mb-1">Clean (%)</label>
+              <input type="text" inputmode="decimal" id="scoreC" placeholder="84" class="w-full border rounded p-1 text-xs text-center font-bold" required />
+            </div>
+          </div>
+
+          <div class="grid grid-cols-3 gap-3">
+            <div>
+              <label class="block text-[11px] font-bold mb-1">Jumlah Minor</label>
+              <input type="number" id="countMinor" value="0" min="0" class="w-full border rounded p-2 text-xs bg-white text-center font-bold text-amber-600" />
+            </div>
+            <div>
+              <label class="block text-[11px] font-bold mb-1">Jumlah Mayor</label>
+              <input type="number" id="countMayor" value="0" min="0" class="w-full border rounded p-2 text-xs bg-white text-center font-bold text-orange-600" />
+            </div>
+            <div>
+              <label class="block text-[11px] font-bold mb-1">Jumlah Kritis</label>
+              <input type="number" id="countKritis" value="0" min="0" class="w-full border rounded p-2 text-xs bg-white text-center font-bold text-red-600" />
+            </div>
+          </div>
         </div>
 
-        <div>
-          <label class="block text-xs font-bold mb-1">Detail Temuan Auditor</label>
-          <textarea id="inputTemuan" rows="3" class="w-full border rounded p-2 text-xs" required placeholder="Jelaskan ketidaksesuaian yang ditemukan..."></textarea>
+        <!-- Section 3: Daftar Temuan Audit (Multiple Findings) -->
+        <div class="bg-gray-50 p-4 rounded-lg border space-y-3">
+          <div class="flex justify-between items-center">
+            <h3 class="text-xs font-bold text-emerald-800 uppercase tracking-wider">3. Detail Temuan Audit Store</h3>
+            <button type="button" onclick="addFindingRow()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold px-3 py-1 rounded shadow">
+              + Tambah Temuan Lagi
+            </button>
+          </div>
+
+          <!-- Container Row Temuan -->
+          <div id="findingsContainer" class="space-y-4">
+            <!-- Row temuan default pertama akan digenerate secara otomatis via JS -->
+          </div>
         </div>
 
-        <div>
-          <label class="block text-xs font-bold mb-1">Target Selesai Perbaikan</label>
-          <input type="date" id="inputDueDate" class="w-full border rounded p-2 text-xs" required />
-        </div>
-
-        <button type="submit" id="btnSubmit" class="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-bold py-2 rounded text-xs transition">
-          Simpan Data Audit
+        <button type="submit" id="btnSubmit" class="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-bold py-3 rounded-lg text-xs shadow transition">
+          Simpan Seluruh Data Audit & Temuan
         </button>
       </form>
     </div>
