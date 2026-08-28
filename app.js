@@ -4,6 +4,13 @@ var allData = [];
 var storeChartInstance = null;
 var pillarChartInstance = null;
 
+// Daftar Store Resmi
+var LIST_STORE = [
+  "Pandanwangi", "Cileunyi", "Jatos", "Cipasir", 
+  "Legok Jabar", "Simpang Lima", "Cimanuk", 
+  "Singaparna", "Siliwangi", "Indihiang", "Bulak Laut"
+];
+
 // Konfigurasi Worker PDF.js
 if (typeof pdfjsLib !== 'undefined') {
   pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
@@ -60,7 +67,6 @@ async function handlePdfUpload(event) {
       var page = await pdf.getPage(i);
       var textContent = await page.getTextContent();
       
-      // Mengambil tiap baris/kata teks dari PDF
       var lastY;
       var pageText = "";
       for (var item of textContent.items) {
@@ -73,9 +79,6 @@ async function handlePdfUpload(event) {
       rawText += pageText + "\n---PAGE---\n";
     }
 
-    console.log("=== TEKS RAW EKSTRAKSI PDF ===");
-    console.log(rawText);
-
     parsePdfDataAndFillForm(rawText);
     if (statusLbl) statusLbl.innerText = "PDF Berhasil Diekstrak!";
   } catch (err) {
@@ -85,16 +88,19 @@ async function handlePdfUpload(event) {
   }
 }
 
-// 2. PARSER SUPER FLEKSIBEL
+// 2. PARSER TEPAT SESUAI KRITERIA
 function parsePdfDataAndFillForm(text) {
-  // A. NAMA STORE
-  var storeMatch = text.match(/Nama Store\s*[:|-]?\s*([^\n\r]+)/i) || 
-                     text.match(/(LC\s+[A-Za-z0-9\s]+?)(?=\s+Kode Store|\s+Tanggal|\n)/i);
-  if (storeMatch) {
-    document.getElementById("inputStore").value = storeMatch[1].replace(/\|/g, "").trim();
+  
+  // A. EKSTRAKSI NAMA STORE (SESUAI DAFTAR RESMI)
+  var matchedStore = LIST_STORE.find(s => new RegExp("\\b" + s + "\\b", "i").test(text));
+  if (matchedStore) {
+    document.getElementById("inputStore").value = "LC " + matchedStore;
+  } else {
+    var storeMatch = text.match(/Nama Store\s*[:|-]?\s*([^\n\r]+)/i);
+    if (storeMatch) document.getElementById("inputStore").value = storeMatch[1].replace(/\|/g, "").trim();
   }
 
-  // B. TANGGAL
+  // B. EKSTRAKSI TANGGAL
   var tglMatch = text.match(/(\d{4}-\d{2}-\d{2})/) || text.match(/(\d{2}[\/\-]\d{2}[\/\-]\d{4})/);
   if (tglMatch) {
     var dateVal = tglMatch[1];
@@ -105,16 +111,17 @@ function parsePdfDataAndFillForm(text) {
     document.getElementById("inputTanggalWaktu").value = dateVal;
   }
 
-  // C. AUDITOR
-  var auditorMatch = text.match(/Auditor\s*[:|-]?\s*([^\n\r]+)/i) || 
-                        text.match(/AUDITOR\s+([A-Za-z\s]+?)(?=\s+STORE LEADER|\s+JABATAN|\n)/i);
+  // C. EKSTRAKSI AUDITOR (PERBAIKAN: MENGHINDARI NAMA JABATAN)
+  var auditorMatch = text.match(/Auditor\s*[:|-]?\s*([A-Za-z\s]+?)(?=\s+Jabatan|\s+Store Leader|\s+Shift|\n|$)/i) ||
+                     text.match(/AUDITOR\s+([A-Za-z\s]+?)(?=\s+JABATAN|\s+STORE LEADER|\n|$)/i);
   if (auditorMatch) {
-    document.getElementById("inputAuditor").value = auditorMatch[1].replace(/\|/g, "").trim();
+    var cleanAuditor = auditorMatch[1].replace(/\|/g, "").replace(/Jabatan.*/i, "").trim();
+    document.getElementById("inputAuditor").value = cleanAuditor;
   }
 
   // D. STORE LEADER
-  var leaderMatch = text.match(/Store Leader\s*[:|-]?\s*([^\n\r]+)/i) || 
-                      text.match(/STORE LEADER\s+([A-Za-z\s]+?)(?=\s+JENIS AUDIT|\s+SHIFT|\n)/i);
+  var leaderMatch = text.match(/Store Leader\s*[:|-]?\s*([A-Za-z\s]+?)(?=\s+Jabatan|\s+Jenis Audit|\n|$)/i) || 
+                      text.match(/STORE LEADER\s+([A-Za-z\s]+?)(?=\s+JENIS AUDIT|\s+SHIFT|\n|$)/i);
   if (leaderMatch) {
     document.getElementById("inputStoreLeader").value = leaderMatch[1].replace(/\|/g, "").trim();
   }
@@ -125,14 +132,14 @@ function parsePdfDataAndFillForm(text) {
     document.getElementById("inputAuditKe").value = auditKeMatch[1];
   }
 
-  // F. PREDIKAT (Contoh: LULUS, SANGAT BAIK, PERBAIKAN)
+  // F. PREDIKAT
   var predikatMatch = text.match(/Predikat\s*[:|-]?\s*([^\n\r]+)/i) || 
                         text.match(/PREDIKAT\s+([A-Za-z\s]+?)(?=\n|Unsur|Hygiene|$)/i);
   if (predikatMatch) {
     document.getElementById("inputPredikat").value = predikatMatch[1].replace(/\|/g, "").trim();
   }
 
-  // G. SKOR 5 PILAR (%) - Mencari Kata Kunci Kategori + Angka Persen
+  // G. SKOR 5 PILAR (%)
   var extractPillarScore = function(pillarName) {
     var reg = new RegExp(pillarName + "[\\s\\S]{0,50}?(\\d{1,3}(?:\\.\\d+)?)\\s*%", "i");
     var m = text.match(reg);
@@ -151,33 +158,42 @@ function parsePdfDataAndFillForm(text) {
   if (haScore !== null) document.getElementById("scoreHa").value = haScore;
   if (cScore !== null) document.getElementById("scoreC").value = cScore;
 
-  // H. RINCIAN TEMUAN (FINDINGS)
+  // H. RINCIAN TEMUAN (MEMISAHKAN RINGKASAN TEMUAN DENGAN TEMUAN MENGGAGALKAN AUDIT)
   var container = document.getElementById("findingsContainer");
-  container.innerHTML = ""; // Clear form temuan
+  container.innerHTML = "";
 
-  // Split teks berdasarkan baris
-  var lines = text.split("\n");
+  // Isolasi hanya pada bagian 'Ringkasan Temuan' dan potong sebelum 'Temuan Kritis / Menggagalkan'
+  var summaryText = text;
+  var idxRingkasan = text.search(/Ringkasan Temuan/i);
+  var idxKritis = text.search(/Temuan Kritis|Menggagalkan Audit|Temuan Fatal/i);
+
+  if (idxRingkasan !== -1) {
+    if (idxKritis !== -1 && idxKritis > idxRingkasan) {
+      summaryText = text.substring(idxRingkasan, idxKritis);
+    } else {
+      summaryText = text.substring(idxRingkasan);
+    }
+  }
+
+  var lines = summaryText.split("\n");
   var findingsList = [];
   var currentFinding = null;
 
   var pilarList = ["Hygiene", "Healthy", "Fresh", "Halal", "Clean"];
-  var levelList = ["Minor", "Mayor", "Kritis"];
+  var levelList = ["Minor", "Mayor"];
 
   for (var i = 0; i < lines.length; i++) {
     var line = lines[i].trim();
     if (!line) continue;
 
-    // Deteksi awal temuan berdasarkan pilar & level ketidaksesuaian
     var foundPillar = pilarList.find(p => new RegExp("\\b" + p + "\\b", "i").test(line));
     var foundLevel = levelList.find(l => new RegExp("\\b" + l + "\\b", "i").test(line));
 
-    // Jika menemukan indikasi baris temuan baru
-    if (foundPillar && (foundLevel || line.includes("NC") || line.includes("Temuan") || /\b[A-Z]\d+\b/.test(line))) {
+    if (foundPillar && (foundLevel || line.includes("NC") || /\b[A-Z]\d+\b/.test(line))) {
       if (currentFinding) {
         findingsList.push(currentFinding);
       }
 
-      // Ambil kode (seperti H01, C02, dll jika ada)
       var codeMatch = line.match(/\b([A-Z0-9]{2,6})\b/);
       var detectedCode = codeMatch ? codeMatch[1] : "-";
 
@@ -188,7 +204,6 @@ function parsePdfDataAndFillForm(text) {
         action: "-"
       };
     } else if (currentFinding) {
-      // Menggabungkan baris penjelasan atau tindakan koreksi awal
       if (line.toLowerCase().includes("tindakan") || line.toLowerCase().includes("action") || line.toLowerCase().includes("koreksi")) {
         currentFinding.action = line.replace(/tindakan awal|tindakan koreksi|action/gi, "").replace(/[:|-]/g, "").trim();
       } else if (!line.includes("---PAGE---") && !line.toLowerCase().includes("halaman")) {
@@ -201,15 +216,12 @@ function parsePdfDataAndFillForm(text) {
     findingsList.push(currentFinding);
   }
 
-  // Render hasil temuan ke Form UI
   if (findingsList.length > 0) {
     findingsList.forEach(function(item) {
-      // Bersihkan teks detail temuan dari kata kunci pilar
-      var cleanDetail = item.detail.replace(/Hygiene|Healthy|Fresh|Halal|Clean|Minor|Mayor|Kritis/gi, "").replace(/[:|]/g, "").trim();
+      var cleanDetail = item.detail.replace(/Hygiene|Healthy|Fresh|Halal|Clean|Minor|Mayor/gi, "").replace(/[:|]/g, "").trim();
       addFindingRowWithData(item.pillar, item.code, cleanDetail || item.detail, item.action);
     });
   } else {
-    // Jika tidak ditemukan temuan terstruktur, buat 1 baris default
     addFindingRow();
   }
 }
