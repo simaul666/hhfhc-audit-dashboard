@@ -5,7 +5,9 @@ var storeChartInstance = null;
 var pillarChartInstance = null;
 
 // Konfigurasi Worker PDF.js
-pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+if (typeof pdfjsLib !== 'undefined') {
+  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+}
 
 document.addEventListener("DOMContentLoaded", function() {
   var inputTgl = document.getElementById("inputTanggalWaktu");
@@ -38,7 +40,7 @@ function switchTab(tabName) {
   }
 }
 
-// 1. BACA FILE PDF DENGAN PERBAIKAN PEMBERSIHAN TEKS
+// 1. PROSES BACA PDF
 async function handlePdfUpload(event) {
   var file = event.target.files[0];
   if (!file || file.type !== "application/pdf") {
@@ -52,20 +54,29 @@ async function handlePdfUpload(event) {
   try {
     var arrayBuffer = await file.arrayBuffer();
     var pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-    var fullText = "";
+    var rawText = "";
 
     for (var i = 1; i <= pdf.numPages; i++) {
       var page = await pdf.getPage(i);
       var textContent = await page.getTextContent();
-      // Gabungkan token teks dengan spasi yang bersih
-      var pageText = textContent.items.map(s => s.str).join(" ");
-      fullText += pageText + "\n";
+      
+      // Mengambil tiap baris/kata teks dari PDF
+      var lastY;
+      var pageText = "";
+      for (var item of textContent.items) {
+        if (lastY !== item.transform[5] && lastY !== undefined) {
+          pageText += "\n";
+        }
+        pageText += item.str + " ";
+        lastY = item.transform[5];
+      }
+      rawText += pageText + "\n---PAGE---\n";
     }
 
-    console.log("=== TEKS HASIL EKSTRAKSI PDF ===");
-    console.log(fullText);
+    console.log("=== TEKS RAW EKSTRAKSI PDF ===");
+    console.log(rawText);
 
-    parsePdfDataAndFillForm(fullText);
+    parsePdfDataAndFillForm(rawText);
     if (statusLbl) statusLbl.innerText = "PDF Berhasil Diekstrak!";
   } catch (err) {
     console.error("Gagal membaca PDF:", err);
@@ -74,103 +85,132 @@ async function handlePdfUpload(event) {
   }
 }
 
-// 2. PARSER TEPAT SESUAI STRUKTUR HASIL AUDIT QA
+// 2. PARSER SUPER FLEKSIBEL
 function parsePdfDataAndFillForm(text) {
-  // A. Ekstrak Nama Store (Misal: LC Siliwangi Tasik)
-  var storeMatch = text.match(/(LC\s+[A-Za-z0-9\s]+?)(?=\s+Kode Store|$)/i);
+  // A. NAMA STORE
+  var storeMatch = text.match(/Nama Store\s*[:|-]?\s*([^\n\r]+)/i) || 
+                     text.match(/(LC\s+[A-Za-z0-9\s]+?)(?=\s+Kode Store|\s+Tanggal|\n)/i);
   if (storeMatch) {
-    document.getElementById("inputStore").value = storeMatch[1].trim();
+    document.getElementById("inputStore").value = storeMatch[1].replace(/\|/g, "").trim();
   }
 
-  // B. Ekstrak Tanggal
-  var tglMatch = text.match(/(\d{4}-\d{2}-\d{2})/);
+  // B. TANGGAL
+  var tglMatch = text.match(/(\d{4}-\d{2}-\d{2})/) || text.match(/(\d{2}[\/\-]\d{2}[\/\-]\d{4})/);
   if (tglMatch) {
-    document.getElementById("inputTanggalWaktu").value = tglMatch[1];
+    var dateVal = tglMatch[1];
+    if (dateVal.includes("/")) {
+      var parts = dateVal.split("/");
+      dateVal = `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+    }
+    document.getElementById("inputTanggalWaktu").value = dateVal;
   }
 
-  // C. Ekstrak Auditor
-  var auditorMatch = text.match(/AUDITOR\s+([A-Za-z\s]+?)(?=\s+STORE LEADER|\s+JABATAN|$)/i);
+  // C. AUDITOR
+  var auditorMatch = text.match(/Auditor\s*[:|-]?\s*([^\n\r]+)/i) || 
+                        text.match(/AUDITOR\s+([A-Za-z\s]+?)(?=\s+STORE LEADER|\s+JABATAN|\n)/i);
   if (auditorMatch) {
-    document.getElementById("inputAuditor").value = auditorMatch[1].trim();
+    document.getElementById("inputAuditor").value = auditorMatch[1].replace(/\|/g, "").trim();
   }
 
-  // D. Ekstrak Store Leader
-  var leaderMatch = text.match(/STORE LEADER\s+([A-Za-z\s]+?)(?=\s+JENIS AUDIT|\s+SHIFT|$)/i);
+  // D. STORE LEADER
+  var leaderMatch = text.match(/Store Leader\s*[:|-]?\s*([^\n\r]+)/i) || 
+                      text.match(/STORE LEADER\s+([A-Za-z\s]+?)(?=\s+JENIS AUDIT|\s+SHIFT|\n)/i);
   if (leaderMatch) {
-    document.getElementById("inputStoreLeader").value = leaderMatch[1].trim();
+    document.getElementById("inputStoreLeader").value = leaderMatch[1].replace(/\|/g, "").trim();
   }
 
-  // E. Ekstrak Audit Ke
-  var auditKeMatch = text.match(/AUDIT KE-\s*\|\s*(\d+)/i) || text.match(/AUDIT KE-\s*(\d+)/i);
+  // E. AUDIT KE
+  var auditKeMatch = text.match(/Audit Ke[-]?\s*[:|-]?\s*(\d+)/i) || text.match(/AUDIT KE-\s*\|\s*(\d+)/i);
   if (auditKeMatch) {
     document.getElementById("inputAuditKe").value = auditKeMatch[1];
   }
 
-  // F. Ekstrak Predikat
-  var predikatMatch = text.match(/PREDIKAT\s+([A-Za-z\s]+?)(?=\s+Unsur|\s+Hygiene|$)/i);
+  // F. PREDIKAT (Contoh: LULUS, SANGAT BAIK, PERBAIKAN)
+  var predikatMatch = text.match(/Predikat\s*[:|-]?\s*([^\n\r]+)/i) || 
+                        text.match(/PREDIKAT\s+([A-Za-z\s]+?)(?=\n|Unsur|Hygiene|$)/i);
   if (predikatMatch) {
-    document.getElementById("inputPredikat").value = predikatMatch[1].trim();
+    document.getElementById("inputPredikat").value = predikatMatch[1].replace(/\|/g, "").trim();
   }
 
-  // G. Ekstrak Skor 5 Pilar (%)
-  var scoreH = text.match(/Hygiene\s*\|\s*[\d\.]+\s*\|\s*\d+\s*\|\s*(\d+)%/i);
-  var scoreHe = text.match(/Healthy\s*\|\s*[\d\.]+\s*\|\s*\d+\s*\|\s*(\d+)%/i);
-  var scoreF = text.match(/Fresh\s*\|\s*[\d\.]+\s*\|\s*\d+\s*\|\s*(\d+)%/i);
-  var scoreHa = text.match(/Halal\s*\|\s*[\d\.]+\s*\|\s*\d+\s*\|\s*(\d+)%/i);
-  var scoreC = text.match(/Clean\s*\|\s*[\d\.]+\s*\|\s*\d+\s*\|\s*(\d+)%/i);
+  // G. SKOR 5 PILAR (%) - Mencari Kata Kunci Kategori + Angka Persen
+  var extractPillarScore = function(pillarName) {
+    var reg = new RegExp(pillarName + "[\\s\\S]{0,50}?(\\d{1,3}(?:\\.\\d+)?)\\s*%", "i");
+    var m = text.match(reg);
+    return m ? parseFloat(m[1]) : null;
+  };
 
-  if (scoreH) document.getElementById("scoreH").value = scoreH[1];
-  if (scoreHe) document.getElementById("scoreHe").value = scoreHe[1];
-  if (scoreF) document.getElementById("scoreF").value = scoreF[1];
-  if (scoreHa) document.getElementById("scoreHa").value = scoreHa[1];
-  if (scoreC) document.getElementById("scoreC").value = scoreC[1];
+  var hScore = extractPillarScore("Hygiene");
+  var heScore = extractPillarScore("Healthy");
+  var fScore = extractPillarScore("Fresh");
+  var haScore = extractPillarScore("Halal");
+  var cScore = extractPillarScore("Clean");
 
-  // H. Ekstrak Ringkasan Temuan
+  if (hScore !== null) document.getElementById("scoreH").value = hScore;
+  if (heScore !== null) document.getElementById("scoreHe").value = heScore;
+  if (fScore !== null) document.getElementById("scoreF").value = fScore;
+  if (haScore !== null) document.getElementById("scoreHa").value = haScore;
+  if (cScore !== null) document.getElementById("scoreC").value = cScore;
+
+  // H. RINCIAN TEMUAN (FINDINGS)
   var container = document.getElementById("findingsContainer");
-  container.innerHTML = ""; // Reset form temuan
+  container.innerHTML = ""; // Clear form temuan
 
-  // Ekstrak bagian teks Ringkasan Temuan
-  var findingsSectionIndex = text.indexOf("Ringkasan Temuan");
-  var criticalSectionIndex = text.indexOf("Temuan Kritis");
+  // Split teks berdasarkan baris
+  var lines = text.split("\n");
+  var findingsList = [];
+  var currentFinding = null;
 
-  var findingsText = text;
-  if (findingsSectionIndex !== -1) {
-    findingsText = text.substring(findingsSectionIndex, criticalSectionIndex !== -1 ? criticalSectionIndex : text.length);
+  var pilarList = ["Hygiene", "Healthy", "Fresh", "Halal", "Clean"];
+  var levelList = ["Minor", "Mayor", "Kritis"];
+
+  for (var i = 0; i < lines.length; i++) {
+    var line = lines[i].trim();
+    if (!line) continue;
+
+    // Deteksi awal temuan berdasarkan pilar & level ketidaksesuaian
+    var foundPillar = pilarList.find(p => new RegExp("\\b" + p + "\\b", "i").test(line));
+    var foundLevel = levelList.find(l => new RegExp("\\b" + l + "\\b", "i").test(line));
+
+    // Jika menemukan indikasi baris temuan baru
+    if (foundPillar && (foundLevel || line.includes("NC") || line.includes("Temuan") || /\b[A-Z]\d+\b/.test(line))) {
+      if (currentFinding) {
+        findingsList.push(currentFinding);
+      }
+
+      // Ambil kode (seperti H01, C02, dll jika ada)
+      var codeMatch = line.match(/\b([A-Z0-9]{2,6})\b/);
+      var detectedCode = codeMatch ? codeMatch[1] : "-";
+
+      currentFinding = {
+        pillar: foundPillar,
+        code: detectedCode,
+        detail: line,
+        action: "-"
+      };
+    } else if (currentFinding) {
+      // Menggabungkan baris penjelasan atau tindakan koreksi awal
+      if (line.toLowerCase().includes("tindakan") || line.toLowerCase().includes("action") || line.toLowerCase().includes("koreksi")) {
+        currentFinding.action = line.replace(/tindakan awal|tindakan koreksi|action/gi, "").replace(/[:|-]/g, "").trim();
+      } else if (!line.includes("---PAGE---") && !line.toLowerCase().includes("halaman")) {
+        currentFinding.detail += " " + line;
+      }
+    }
   }
 
-  // Regex fleksibel membaca per blok temuan
-  var regexBlock = /(Minor|Mayor|Kritis)\s+(Hygiene|Healthy|Fresh|Halal|Clean)[\s\.\-]*([A-Za-z0-9]+)?([\s\S]*?)(?=(Minor|Mayor|Kritis)\s+(Hygiene|Healthy|Fresh|Halal|Clean)|Temuan Kritis|$)/gi;
-
-  var match;
-  var count = 0;
-
-  while ((match = regexBlock.exec(findingsText)) !== null) {
-    var pillar = match[2];
-    var code = match[3] || "-";
-    var content = match[4] || "";
-
-    var detail = "-";
-    var action = "-";
-
-    var detailMatch = content.match(/Temuan:\s*(.*?)(?=\s*Tindakan awal:|$)/i);
-    if (detailMatch) {
-      detail = detailMatch[1].trim();
-    }
-
-    var actionMatch = content.match(/Tindakan awal:\s*(.*?)(?=$)/i);
-    if (actionMatch) {
-      action = actionMatch[1].trim();
-    }
-
-    // Jika ada isi detail/deskripsi temuan, masukkan ke form
-    if (detail !== "-" || content.trim().length > 0) {
-      count++;
-      addFindingRowWithData(pillar, code, detail, action);
-    }
+  if (currentFinding) {
+    findingsList.push(currentFinding);
   }
 
-  if (count === 0) {
-    addFindingRow(); // Tambah 1 baris kosong jika tidak ada temuan
+  // Render hasil temuan ke Form UI
+  if (findingsList.length > 0) {
+    findingsList.forEach(function(item) {
+      // Bersihkan teks detail temuan dari kata kunci pilar
+      var cleanDetail = item.detail.replace(/Hygiene|Healthy|Fresh|Halal|Clean|Minor|Mayor|Kritis/gi, "").replace(/[:|]/g, "").trim();
+      addFindingRowWithData(item.pillar, item.code, cleanDetail || item.detail, item.action);
+    });
+  } else {
+    // Jika tidak ditemukan temuan terstruktur, buat 1 baris default
+    addFindingRow();
   }
 }
 
@@ -189,11 +229,11 @@ function addFindingRowWithData(pillar, code, detail, action) {
       <div>
         <label class="block text-[10px] font-bold text-gray-500">Pillar Audit</label>
         <select class="finding-pillar w-full border rounded p-1.5 text-xs bg-gray-50 font-semibold">
-          <option value="Hygiene" ${pillar === "Hygiene" ? "selected" : ""}>Hygiene</option>
-          <option value="Healthy" ${pillar === "Healthy" ? "selected" : ""}>Healthy</option>
-          <option value="Fresh" ${pillar === "Fresh" ? "selected" : ""}>Fresh</option>
-          <option value="Halal" ${pillar === "Halal" ? "selected" : ""}>Halal</option>
-          <option value="Clean" ${pillar === "Clean" ? "selected" : ""}>Clean</option>
+          <option value="Hygiene" ${pillar.toLowerCase() === "hygiene" ? "selected" : ""}>Hygiene</option>
+          <option value="Healthy" ${pillar.toLowerCase() === "healthy" ? "selected" : ""}>Healthy</option>
+          <option value="Fresh" ${pillar.toLowerCase() === "fresh" ? "selected" : ""}>Fresh</option>
+          <option value="Halal" ${pillar.toLowerCase() === "halal" ? "selected" : ""}>Halal</option>
+          <option value="Clean" ${pillar.toLowerCase() === "clean" ? "selected" : ""}>Clean</option>
         </select>
       </div>
       <div>
