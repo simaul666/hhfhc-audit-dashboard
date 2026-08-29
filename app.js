@@ -1,4 +1,4 @@
-var SCRIPT_URL = "https://script.google.com/macros/s/AKfycby4wB4mdqzA-5EYoq4qZ2lqbCTxHspG7OkSj9eURT3Pt0T9_N4DqMMErsY94bKq-fjgpQ/exec"; 
+var SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw0zxL2GXPPjU5KAH-Q2c4SD2TsmX6_vplkYVe18Yfkor_AnMYT__MNM158Tp-Y7LqBpg/exec"; 
 
 var allData = [];
 var storeChartInstance = null;
