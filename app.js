@@ -1,4 +1,5 @@
-var SCRIPT_URL = "https://script.google.com/macros/s/AKfycby4wB4mdqzA-5EYoq4qZ2lqbCTxHspG7OkSj9eURT3Pt0T9_N4DqMMErsY94bKq-fjgpQ/exec"; 
+var SCRIPT_URL = " https://script.google.com/macros/s/AKfycby4wB4mdqzA-5EYoq4qZ2lqbCTxHspG7OkSj9eURT3Pt0T9_N4DqMMErsY94bKq-fjgpQ/exec
+"; 
 
 var allData = [];
 var storeChartInstance = null;
@@ -278,7 +279,7 @@ function formatDateClean(dateStr) {
 
 function loadData() {
   var tbody = document.getElementById("tableBody");
-  if (tbody) tbody.innerHTML = '<tr><td colspan="8" class="p-4 text-center text-gray-500 font-semibold">Memuat data dari Google Sheets...</td></tr>';
+  if (tbody) tbody.innerHTML = '<tr><td colspan="7" class="p-4 text-center text-gray-500 font-semibold">Memuat data dari Google Sheets...</td></tr>';
 
   fetch(SCRIPT_URL)
     .then(function(res) { return res.json(); })
@@ -314,7 +315,7 @@ function renderTable(data) {
   tbody.innerHTML = "";
 
   if (data.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="8" class="p-4 text-center text-gray-400">Tidak ada data audit untuk ditampilkan.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7" class="p-4 text-center text-gray-400">Tidak ada data audit untuk ditampilkan.</td></tr>';
     return;
   }
 
@@ -386,39 +387,66 @@ function renderMetrics(data) {
   document.getElementById("avgClean").innerText = (sumC / total).toFixed(1) + "%";
 }
 
+// RENDER CHARTS: SKOR HHFHC UPDATE TERBARU PER STORE (KIRI) & DISTRIBUSI PILAR (KANAN)
 function renderCharts(data) {
-  var storeScores = {};
+  var storeLatestScores = {};
   var pillarCounts = { "Hygiene": 0, "Healthy": 0, "Fresh": 0, "Halal": 0, "Clean": 0 };
 
   data.forEach(function(item) {
     var storeName = item.Store || item.store || "Unknown";
     var score = parseFloat(item.Average_Score || item.average_score) || 0;
+    var rawDate = item.Tanggal || item.tanggal || "";
+    var itemDate = rawDate ? new Date(rawDate).getTime() : 0;
 
-    if (!storeScores[storeName]) storeScores[storeName] = { totalScore: 0, count: 0 };
-    storeScores[storeName].totalScore += score;
-    storeScores[storeName].count += 1;
+    // Ambil nilai audit terbaru (paling akhir secara tanggal) per store
+    if (!storeLatestScores[storeName]) {
+      storeLatestScores[storeName] = { score: score, latestDate: itemDate };
+    } else {
+      if (itemDate >= storeLatestScores[storeName].latestDate) {
+        storeLatestScores[storeName].score = score;
+        storeLatestScores[storeName].latestDate = itemDate;
+      }
+    }
 
     var p = item.Pillar_Temuan || item.pillar;
     var detail = item.Detail_Temuan || item.detail || "";
     if (pillarCounts.hasOwnProperty(p) && detail !== "Tidak Ada Temuan") pillarCounts[p] += 1;
   });
 
-  var storeLabels = Object.keys(storeScores);
-  var storeAvgData = storeLabels.map(s => (storeScores[s].totalScore / storeScores[s].count).toFixed(1));
+  var storeLabels = Object.keys(storeLatestScores);
+  var storeLatestData = storeLabels.map(s => storeLatestScores[s].score.toFixed(1));
 
+  // Render Bar Chart (Skor Terakhir Update HHFHC per Store) - Posisi Kiri
   var ctxStore = document.getElementById("chartStoreScore").getContext("2d");
   if (storeChartInstance) storeChartInstance.destroy();
   storeChartInstance = new Chart(ctxStore, {
     type: "bar",
-    data: { labels: storeLabels, datasets: [{ label: "Nilai Rata-Rata (%)", data: storeAvgData, backgroundColor: "#059669" }] },
-    options: { responsive: true, scales: { y: { min: 0, max: 100 } } }
+    data: { 
+      labels: storeLabels, 
+      datasets: [{ 
+        label: "Skor Audit Terakhir (%)", 
+        data: storeLatestData, 
+        backgroundColor: "#059669" 
+      }] 
+    },
+    options: { 
+      responsive: true, 
+      scales: { y: { min: 0, max: 100 } } 
+    }
   });
 
+  // Render Doughnut Chart (Distribusi Temuan Pilar) - Posisi Kanan
   var ctxPillar = document.getElementById("chartPillar").getContext("2d");
   if (pillarChartInstance) pillarChartInstance.destroy();
   pillarChartInstance = new Chart(ctxPillar, {
     type: "doughnut",
-    data: { labels: Object.keys(pillarCounts), datasets: [{ data: Object.values(pillarCounts), backgroundColor: ["#10B981", "#3B82F6", "#F59E0B", "#8B5CF6", "#EF4444"] }] },
+    data: { 
+      labels: Object.keys(pillarCounts), 
+      datasets: [{ 
+        data: Object.values(pillarCounts), 
+        backgroundColor: ["#10B981", "#3B82F6", "#F59E0B", "#8B5CF6", "#EF4444"] 
+      }] 
+    },
     options: { responsive: true }
   });
 }

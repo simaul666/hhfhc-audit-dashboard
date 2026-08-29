@@ -55,7 +55,7 @@
             <option value="LC Cileunyi">LC Cileunyi</option>
             <option value="LC Jatos">LC Jatos</option>
             <option value="LC Cipasir">LC Cipasir</option>
-            <option value="OFC Legok Jabar">OFC Legok Jabar</option>
+            <option value="LC Legok Jabar">LC Legok Jabar</option>
             <option value="LC Simpang Lima">LC Simpang Lima</option>
             <option value="LC Cimanuk">LC Cimanuk</option>
             <option value="LC Singaparna">LC Singaparna</option>
@@ -85,7 +85,7 @@
         </div>
       </div>
 
-      <!-- TABLE LIST CAPA FINDINGS -->
+      <!-- TABLE LIST CAPA FINDINGS (KODE DISEMBUNYIKAN) -->
       <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         <div class="p-4 border-b border-gray-200 flex justify-between items-center bg-gray-50">
           <h3 class="font-bold text-sm text-gray-700">Daftar Temuan Audit & Status CAPA</h3>
@@ -99,7 +99,7 @@
               <tr>
                 <th class="p-3">Tanggal</th>
                 <th class="p-3">Store</th>
-                <th class="p-3">Pillar & Kode</th>
+                <th class="p-3">Pillar</th>
                 <th class="p-3">Detail Temuan</th>
                 <th class="p-3">Tindakan Koreksi</th>
                 <th class="p-3">Target Selesai</th>
@@ -109,7 +109,7 @@
             </thead>
             <tbody id="tableBody" class="divide-y divide-gray-100">
               <tr>
-                <td colspan="8" class="p-4 text-center text-gray-400">Memuat data dari Google Sheets...</td>
+                <td colspan="7" class="p-4 text-center text-gray-400">Memuat data dari Google Sheets...</td>
               </tr>
             </tbody>
           </table>
@@ -146,10 +146,13 @@
 
       <!-- CHARTS CONTAINER -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- GRAFIK KIRI: Skor Update Terbaru HHFHC Per Store -->
         <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-200">
-          <h4 class="font-bold text-xs text-gray-600 mb-4">Rata-Rata Nilai Audit per Store (%)</h4>
+          <h4 class="font-bold text-xs text-gray-600 mb-4">Skor Audit Terakhir HHFHC Per Store (%)</h4>
           <canvas id="chartStoreScore"></canvas>
         </div>
+        
+        <!-- GRAFIK KANAN: Distribusi Temuan Berdasarkan Pilar -->
         <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-200">
           <h4 class="font-bold text-xs text-gray-600 mb-4">Distribusi Temuan Berdasarkan Pillar</h4>
           <canvas id="chartPillar"></canvas>
