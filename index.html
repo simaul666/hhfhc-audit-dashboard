@@ -3,400 +3,227 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dashboard Audit & CAPA Monitoring</title>
+  <title>Dashboard Audit & CAPA</title>
+  
+  <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- PDF.js CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
 </head>
-<body class="bg-gray-100 font-sans text-gray-800 antialiased min-h-screen">
+<body class="bg-gray-100 text-gray-800 font-sans antialiased min-h-screen">
 
-  <!-- HEADER & NAVIGASI -->
-  <header class="bg-emerald-800 text-white shadow-md">
-    <div class="max-w-7xl mx-auto px-4 py-4 flex flex-col md:flex-row justify-between items-center gap-4">
-      <div>
-        <h1 class="text-xl font-extrabold tracking-tight">SYSTEM AUDIT & CAPA MONITORING</h1>
-        <p class="text-xs text-emerald-200">Labbaik Chicken Store Management</p>
-      </div>
-      
+  <!-- NAVIGATION BAR -->
+  <header class="bg-emerald-800 text-white p-4 shadow-md sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
+      <h1 class="text-xl font-bold tracking-wide">SYSTEM AUDIT & CAPA</h1>
       <nav class="flex space-x-2">
-        <button id="navDashboard" type="button" onclick="switchTab('dashboard')" class="bg-emerald-600 px-4 py-2 rounded text-xs font-semibold shadow transition cursor-pointer">
-          Dashboard CAPA
+        <button id="navDashboard" onclick="switchTab('dashboard')" class="bg-emerald-600 px-4 py-2 rounded text-xs font-semibold shadow transition">
+          Dashboard
         </button>
-        <button id="navAuditForm" type="button" onclick="switchTab('auditForm')" class="bg-amber-500 hover:bg-amber-400 text-gray-900 px-4 py-2 rounded text-xs font-bold transition cursor-pointer">
-          + Input Laporan Audit
+        <button id="navCharts" onclick="switchTab('charts')" class="bg-emerald-900 hover:bg-emerald-600 px-4 py-2 rounded text-xs font-semibold transition">
+          Analisis Grafik
+        </button>
+        <button id="navAuditForm" onclick="switchTab('auditForm')" class="bg-amber-500 hover:bg-amber-400 text-gray-900 px-4 py-2 rounded text-xs font-bold transition">
+          + Input Audit
         </button>
       </nav>
     </div>
   </header>
 
-  <main class="max-w-7xl mx-auto px-4 py-6">
+  <main class="max-w-7xl mx-auto p-4 space-y-6">
 
-    <!-- DASHBOARD TAB -->
+    <!-- TAB 1: DASHBOARD TABLE & METRICS -->
     <section id="tabDashboard" class="space-y-6">
-      <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-200 flex flex-col md:flex-row justify-between items-center gap-4">
-        <div class="flex items-center space-x-3 w-full md:w-auto">
+      <!-- Filter Bar & Metrics -->
+      <div class="bg-white p-4 rounded-lg shadow border border-gray-200 flex flex-col md:flex-row justify-between items-center gap-4">
+        <div class="flex items-center space-x-2 w-full md:w-auto">
           <label class="text-xs font-bold text-gray-600">Filter Store:</label>
-          <select id="filterStore" onchange="applyFilter()" class="border border-gray-300 rounded-lg p-2 text-xs font-semibold bg-gray-50 text-gray-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 w-full md:w-56">
-            <option value="ALL">Semua Store (All Stores)</option>
-            <option value="LC Pandanwangi">LC Pandanwangi</option>
-            <option value="LC Cileunyi">LC Cileunyi</option>
-            <option value="LC Jatos">LC Jatos</option>
-            <option value="LC Cipasir">LC Cipasir</option>
-            <option value="LC Legok Jabar">LC Legok Jabar</option>
-            <option value="LC Simpang Lima">LC Simpang Lima</option>
-            <option value="LC Cimanuk">LC Cimanuk</option>
-            <option value="LC Singaparna">LC Singaparna</option>
-            <option value="LC Siliwangi">LC Siliwangi</option>
-            <option value="LC Indihiang">LC Indihiang</option>
-            <option value="LC Bulak Laut">LC Bulak Laut</option>
+          <select id="filterStore" onchange="applyFilter()" class="border rounded p-2 text-xs bg-gray-50">
+            <option value="ALL">Semua Store</option>
+            <option value="LC Pandanwangi">Pandanwangi</option>
+            <option value="LC Cileunyi">Cileunyi</option>
+            <option value="LC Jatos">Jatos</option>
+            <option value="LC Cipasir">Cipasir</option>
+            <option value="LC Legok Jabar">Legok Jabar</option>
+            <option value="LC Simpang Lima">Simpang Lima</option>
+            <option value="LC Cimanuk">Cimanuk</option>
+            <option value="LC Singaparna">Singaparna</option>
+            <option value="LC Siliwangi">Siliwangi</option>
+            <option value="LC Indihiang">Indihiang</option>
+            <option value="LC Bulak Laut">Bulak Laut</option>
           </select>
         </div>
-        <div class="text-xs text-gray-500">
-          Target Tampilan: <span id="lblFilterTarget" class="font-bold text-emerald-700">Semua Store</span>
+        <div class="text-xs font-semibold text-emerald-700">
+          Target View: <span id="lblFilterTarget" class="font-bold underline">Semua Store</span>
         </div>
       </div>
 
-      <!-- CARDS METRIK -->
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-200 border-l-4 border-l-emerald-500">
-          <p class="text-xs text-gray-500 font-semibold uppercase">Nilai Audit Terakhir</p>
-          <h2 id="statAvgScore" class="text-3xl font-extrabold text-emerald-600 mt-1">0%</h2>
+      <!-- Ringkasan Statistik -->
+      <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-8 gap-3">
+        <div class="bg-white p-3 rounded shadow border text-center">
+          <p class="text-[10px] text-gray-500 font-bold uppercase">Rata-Rata Total</p>
+          <p id="statAvgScore" class="text-lg font-extrabold text-emerald-600">0%</p>
         </div>
-        <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-200 border-l-4 border-l-amber-500">
-          <p class="text-xs text-gray-500 font-semibold uppercase">Temuan Aktif (Outstanding)</p>
-          <h2 id="statActiveTemuan" class="text-3xl font-extrabold text-amber-500 mt-1">0</h2>
+        <div class="bg-white p-3 rounded shadow border text-center">
+          <p class="text-[10px] text-gray-500 font-bold uppercase">Hygiene</p>
+          <p id="avgHygienic" class="text-sm font-bold text-gray-700">0%</p>
         </div>
-        <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-200 border-l-4 border-l-blue-500">
-          <p class="text-xs text-gray-500 font-semibold uppercase">Total Laporan Audit</p>
-          <h2 id="statTotalAudit" class="text-3xl font-extrabold text-blue-600 mt-1">0</h2>
+        <div class="bg-white p-3 rounded shadow border text-center">
+          <p class="text-[10px] text-gray-500 font-bold uppercase">Healthy</p>
+          <p id="avgHealthy" class="text-sm font-bold text-gray-700">0%</p>
+        </div>
+        <div class="bg-white p-3 rounded shadow border text-center">
+          <p class="text-[10px] text-gray-500 font-bold uppercase">Fresh</p>
+          <p id="avgFresh" class="text-sm font-bold text-gray-700">0%</p>
+        </div>
+        <div class="bg-white p-3 rounded shadow border text-center">
+          <p class="text-[10px] text-gray-500 font-bold uppercase">Halal</p>
+          <p id="avgHalal" class="text-sm font-bold text-gray-700">0%</p>
+        </div>
+        <div class="bg-white p-3 rounded shadow border text-center">
+          <p class="text-[10px] text-gray-500 font-bold uppercase">Clean</p>
+          <p id="avgClean" class="text-sm font-bold text-gray-700">0%</p>
+        </div>
+        <div class="bg-white p-3 rounded shadow border text-center">
+          <p class="text-[10px] text-amber-600 font-bold uppercase">Temuan Aktif</p>
+          <p id="statActiveTemuan" class="text-lg font-extrabold text-amber-600">0</p>
+        </div>
+        <div class="bg-white p-3 rounded shadow border text-center">
+          <p class="text-[10px] text-gray-500 font-bold uppercase">Total Audit</p>
+          <p id="statTotalAudit" class="text-lg font-extrabold text-blue-600">0</p>
         </div>
       </div>
 
-      <!-- TABEL DATA -->
-      <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        <div class="p-4 border-b border-gray-200 flex justify-between items-center bg-gray-50">
-          <h3 class="font-bold text-sm text-gray-700">Daftar Temuan Audit & Status CAPA</h3>
-          <button type="button" onclick="loadData()" class="text-xs bg-gray-200 hover:bg-gray-300 px-3 py-1.5 rounded font-semibold text-gray-700 transition">
-            🔄 Refresh Data
-          </button>
+      <!-- Tabel Data CAPA -->
+      <div class="bg-white rounded-lg shadow overflow-x-auto border border-gray-200">
+        <table class="w-full text-left border-collapse text-xs">
+          <thead>
+            <tr class="bg-gray-100 border-b font-bold text-gray-700">
+              <th class="p-3">Tanggal</th>
+              <th class="p-3">Store</th>
+              <th class="p-3">Pillar</th>
+              <th class="p-3">Detail Temuan</th>
+              <th class="p-3">Tindakan Koreksi</th>
+              <th class="p-3">Target Selesai</th>
+              <th class="p-3">Status</th>
+              <th class="p-3">Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody" class="divide-y divide-gray-100">
+            <tr>
+              <td colspan="8" class="p-4 text-center text-gray-500 font-semibold">Memuat data dari Google Sheets...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- TAB 2: GRAFIK & ANALISIS -->
+    <section id="tabCharts" class="hidden space-y-6">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="bg-white p-4 rounded-lg shadow border border-gray-200 space-y-2">
+          <h3 class="font-bold text-sm text-gray-700">Nilai Rata-Rata per Store (%)</h3>
+          <canvas id="chartStoreScore"></canvas>
         </div>
-        <div class="overflow-x-auto">
-          <table class="w-full text-left text-xs text-gray-600">
-            <thead class="bg-gray-100 text-gray-700 font-bold border-b border-gray-200">
-              <tr>
-                <th class="p-3">Tanggal</th>
-                <th class="p-3">Store</th>
-                <th class="p-3">Pillar</th>
-                <th class="p-3">Detail Temuan</th>
-                <th class="p-3">Tindakan Koreksi</th>
-                <th class="p-3">Target Selesai</th>
-                <th class="p-3">Status</th>
-                <th class="p-3">Skor</th>
-              </tr>
-            </thead>
-            <tbody id="tableBody" class="divide-y divide-gray-100">
-              <tr>
-                <td colspan="8" class="p-4 text-center text-gray-400">Memuat data dari Google Sheets...</td>
-              </tr>
-            </tbody>
-          </table>
+        <div class="bg-white p-4 rounded-lg shadow border border-gray-200 space-y-2">
+          <h3 class="font-bold text-sm text-gray-700">Distribusi Temuan per Pillar Audit</h3>
+          <canvas id="chartPillar"></canvas>
         </div>
       </div>
     </section>
 
-    <!-- FORM TAB -->
-    <section id="tabAuditForm" class="hidden max-w-2xl mx-auto bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-      <h2 class="text-lg font-bold text-gray-800 border-b pb-3 mb-4">Input Temuan Audit / CAPA Baru</h2>
-      
-      <form id="formAudit" onsubmit="submitAuditForm(event)" class="space-y-4 text-xs">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label class="block font-semibold mb-1 text-gray-700">Tanggal Audit</label>
-            <input type="date" id="inpTanggal" required class="w-full border rounded p-2 focus:ring-2 focus:ring-emerald-500">
-          </div>
-          <div>
-            <label class="block font-semibold mb-1 text-gray-700">Pilih Store</label>
-            <select id="inpStore" required class="w-full border rounded p-2 bg-white focus:ring-2 focus:ring-emerald-500">
-              <option value="LC Pandanwangi">LC Pandanwangi</option>
-              <option value="LC Cileunyi">LC Cileunyi</option>
-              <option value="LC Jatos">LC Jatos</option>
-              <option value="LC Cipasir">LC Cipasir</option>
-              <option value="LC Legok Jabar">LC Legok Jabar</option>
-              <option value="LC Simpang Lima">LC Simpang Lima</option>
-              <option value="LC Cimanuk">LC Cimanuk</option>
-              <option value="LC Singaparna">LC Singaparna</option>
-              <option value="LC Siliwangi">LC Siliwangi</option>
-              <option value="LC Indihiang">LC Indihiang</option>
-              <option value="LC Bulak Laut">LC Bulak Laut</option>
-            </select>
-          </div>
+    <!-- TAB 3: FORM INPUT & PARSER PDF -->
+    <section id="tabAuditForm" class="hidden max-w-4xl mx-auto">
+      <div class="bg-white p-6 rounded-lg shadow border border-gray-200 space-y-6">
+        <h2 class="text-lg font-bold text-emerald-800 border-b pb-2">Form Input Data Laporan Audit</h2>
+
+        <!-- Upload PDF Section -->
+        <div class="bg-emerald-50 border border-emerald-200 p-4 rounded-lg space-y-2">
+          <label class="block text-xs font-bold text-emerald-900">Upload PDF Laporan Audit (Auto Parsing)</label>
+          <input type="file" id="pdfInput" onchange="handlePdfUpload(event)" accept="application/pdf" class="block w-full text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-emerald-600 file:text-white hover:file:bg-emerald-700 cursor-pointer"/>
+          <p id="pdfUploadStatus" class="text-[11px] font-semibold text-emerald-700"></p>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label class="block font-semibold mb-1 text-gray-700">Pillar Audit</label>
-            <input type="text" id="inpPillar" placeholder="Quality / Food Safety / Service" required class="w-full border rounded p-2 focus:ring-2 focus:ring-emerald-500">
+        <form id="auditForm" onsubmit="submitForm(event)" class="space-y-4">
+          <!-- Header Metadata -->
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label class="block text-xs font-bold text-gray-600">Nama Store</label>
+              <input type="text" id="inputStore" required class="w-full border rounded p-2 text-xs bg-gray-50" placeholder="Contoh: LC Pandanwangi">
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-gray-600">Tanggal Audit</label>
+              <input type="date" id="inputTanggalWaktu" required class="w-full border rounded p-2 text-xs bg-gray-50">
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-gray-600">Nama Auditor</label>
+              <input type="text" id="inputAuditor" required class="w-full border rounded p-2 text-xs bg-gray-50">
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-gray-600">Store Leader</label>
+              <input type="text" id="inputStoreLeader" class="w-full border rounded p-2 text-xs bg-gray-50">
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-gray-600">Audit Ke-</label>
+              <input type="number" id="inputAuditKe" class="w-full border rounded p-2 text-xs bg-gray-50" placeholder="1">
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-gray-600">Predikat</label>
+              <input type="text" id="inputPredikat" class="w-full border rounded p-2 text-xs bg-gray-50" placeholder="Contoh: BAIK">
+            </div>
           </div>
-          <div>
-            <label class="block font-semibold mb-1 text-gray-700">Nilai Audit (%)</label>
-            <input type="number" id="inpSkor" placeholder="Contoh: 85.5" step="0.1" class="w-full border rounded p-2 focus:ring-2 focus:ring-emerald-500">
+
+          <!-- Score 5 Pilar -->
+          <div class="bg-gray-50 p-3 rounded border space-y-2">
+            <p class="text-xs font-bold text-gray-700">Skor 5 Pilar (%)</p>
+            <div class="grid grid-cols-5 gap-2">
+              <div>
+                <label class="block text-[10px] text-gray-500 font-bold">Hygiene</label>
+                <input type="number" step="0.1" id="scoreH" class="w-full border rounded p-1 text-xs">
+              </div>
+              <div>
+                <label class="block text-[10px] text-gray-500 font-bold">Healthy</label>
+                <input type="number" step="0.1" id="scoreHe" class="w-full border rounded p-1 text-xs">
+              </div>
+              <div>
+                <label class="block text-[10px] text-gray-500 font-bold">Fresh</label>
+                <input type="number" step="0.1" id="scoreF" class="w-full border rounded p-1 text-xs">
+              </div>
+              <div>
+                <label class="block text-[10px] text-gray-500 font-bold">Halal</label>
+                <input type="number" step="0.1" id="scoreHa" class="w-full border rounded p-1 text-xs">
+              </div>
+              <div>
+                <label class="block text-[10px] text-gray-500 font-bold">Clean</label>
+                <input type="number" step="0.1" id="scoreC" class="w-full border rounded p-1 text-xs">
+              </div>
+            </div>
           </div>
-        </div>
 
-        <div>
-          <label class="block font-semibold mb-1 text-gray-700">Detail Temuan Audit</label>
-          <textarea id="inpTemuan" rows="3" required placeholder="Jelaskan temuan ketidaksesuaian..." class="w-full border rounded p-2 focus:ring-2 focus:ring-emerald-500"></textarea>
-        </div>
-
-        <div>
-          <label class="block font-semibold mb-1 text-gray-700">Tindakan Koreksi (CAPA)</label>
-          <textarea id="inpTindakan" rows="2" placeholder="Rencana tindakan perbaikan..." class="w-full border rounded p-2 focus:ring-2 focus:ring-emerald-500"></textarea>
-        </div>
-
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label class="block font-semibold mb-1 text-gray-700">Target Selesai</label>
-            <input type="date" id="inpTarget" class="w-full border rounded p-2 focus:ring-2 focus:ring-emerald-500">
+          <!-- Dynamic Container Temuan -->
+          <div class="space-y-3">
+            <div class="flex justify-between items-center">
+              <h3 class="text-xs font-bold text-gray-700">Daftar Temuan / Ketidaksesuaian</h3>
+              <button type="button" onclick="addFindingRow()" class="bg-emerald-100 hover:bg-emerald-200 text-emerald-800 text-xs px-3 py-1 rounded font-bold transition">
+                + Tambah Temuan
+              </button>
+            </div>
+            <div id="findingsContainer" class="space-y-3"></div>
           </div>
-          <div>
-            <label class="block font-semibold mb-1 text-gray-700">Status CAPA</label>
-            <select id="inpStatus" class="w-full border rounded p-2 bg-white focus:ring-2 focus:ring-emerald-500">
-              <option value="Open">Open</option>
-              <option value="In Progress">In Progress</option>
-              <option value="Selesai">Selesai</option>
-            </select>
-          </div>
-        </div>
 
-        <div class="pt-3">
-          <button id="btnSubmitAudit" type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded shadow transition cursor-pointer">
-            Simpan Laporan Audit
+          <!-- Submit Button -->
+          <button type="submit" id="btnSubmit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold p-3 rounded text-xs transition shadow-lg">
+            Simpan Seluruh Data Audit & Temuan
           </button>
-        </div>
-      </form>
+        </form>
+      </div>
     </section>
 
   </main>
 
-  <script>
-    // MASUKKAN URL WEB APP GOOGLE APPS SCRIPT ANDA DI SINI
-    var SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx.../exec";
-
-    var rawAuditData = [];
-
-    function switchTab(tabName) {
-      var tabDashboard = document.getElementById("tabDashboard");
-      var tabAuditForm = document.getElementById("tabAuditForm");
-
-      if (tabDashboard) tabDashboard.classList.add("hidden");
-      if (tabAuditForm) tabAuditForm.classList.add("hidden");
-
-      document.getElementById("navDashboard").className = "bg-emerald-900 hover:bg-emerald-600 px-4 py-2 rounded text-xs font-semibold transition cursor-pointer";
-      document.getElementById("navAuditForm").className = "bg-emerald-900 hover:bg-emerald-600 px-4 py-2 rounded text-xs font-semibold transition cursor-pointer";
-
-      if (tabName === "dashboard" && tabDashboard) {
-        tabDashboard.classList.remove("hidden");
-        document.getElementById("navDashboard").className = "bg-emerald-600 px-4 py-2 rounded text-xs font-semibold shadow transition cursor-pointer";
-      } else if (tabName === "auditForm" && tabAuditForm) {
-        tabAuditForm.classList.remove("hidden");
-        document.getElementById("navAuditForm").className = "bg-amber-500 hover:bg-amber-400 text-gray-900 px-4 py-2 rounded text-xs font-bold transition cursor-pointer";
-      }
-    }
-
-    function loadData() {
-      var tbody = document.getElementById("tableBody");
-      if (tbody) {
-        tbody.innerHTML = '<tr><td colspan="8" class="p-4 text-center text-gray-400">Memuat data dari Google Sheets...</td></tr>';
-      }
-
-      window.handleScriptData = function(response) {
-        if (response && response.status === "success" && Array.isArray(response.data)) {
-          rawAuditData = response.data;
-          renderTable(rawAuditData);
-          calculateMetrics(rawAuditData);
-        } else {
-          if (tbody) {
-            tbody.innerHTML = '<tr><td colspan="8" class="p-4 text-center text-red-500 font-bold">Gagal mengambil data dari Google Sheets.</td></tr>';
-          }
-        }
-      };
-
-      var script = document.createElement("script");
-      script.src = SCRIPT_URL + (SCRIPT_URL.indexOf("?") >= 0 ? "&" : "?") + "callback=handleScriptData&t=" + new Date().getTime();
-      script.onerror = function() {
-        if (tbody) {
-          tbody.innerHTML = '<tr><td colspan="8" class="p-4 text-center text-red-500 font-bold">Gagal terhubung. Pastikan SCRIPT_URL sudah benar dan diset ke Anyone.</td></tr>';
-        }
-      };
-
-      document.body.appendChild(script);
-    }
-
-    function renderTable(data) {
-      var tbody = document.getElementById("tableBody");
-      if (!tbody) return;
-
-      if (!data || data.length <= 1) {
-        tbody.innerHTML = '<tr><td colspan="8" class="p-4 text-center text-gray-400">Belum ada data audit yang tersimpan.</td></tr>';
-        return;
-      }
-
-      var html = "";
-      for (var i = 1; i < data.length; i++) {
-        var row = data[i];
-        if (!row || row.length === 0) continue;
-
-        var tgl = row[0] ? formatDate(row[0]) : '-';
-        var store = row[1] || '-';
-        var pillar = row[2] || '-';
-        var temuan = row[3] || '-';
-        var tindakan = row[4] || '-';
-        var target = row[5] ? formatDate(row[5]) : '-';
-        var status = row[6] || 'Open';
-        var skor = row[7] !== undefined ? row[7] : '-';
-
-        var statusColor = (status.toString().toLowerCase() === 'selesai' || status.toString().toLowerCase() === 'closed')
-          ? 'bg-emerald-100 text-emerald-800' 
-          : 'bg-amber-100 text-amber-800';
-
-        html += `
-          <tr class="hover:bg-gray-50 border-b">
-            <td class="p-3">${tgl}</td>
-            <td class="p-3 font-semibold text-gray-800">${store}</td>
-            <td class="p-3">${pillar}</td>
-            <td class="p-3">${temuan}</td>
-            <td class="p-3">${tindakan}</td>
-            <td class="p-3">${target}</td>
-            <td class="p-3"><span class="${statusColor} text-[10px] px-2 py-1 rounded font-bold">${status}</span></td>
-            <td class="p-3 font-bold">${skor}${typeof skor === 'number' ? '%' : ''}</td>
-          </tr>
-        `;
-      }
-      tbody.innerHTML = html;
-    }
-
-    function calculateMetrics(data) {
-      if (!data || data.length <= 1) return;
-
-      var total = data.length - 1;
-      var activeTemuan = 0;
-      var lastScore = "0%";
-
-      for (var i = data.length - 1; i >= 1; i--) {
-        var row = data[i];
-        var rawScore = row[7] !== undefined ? row[7] : (row[8] !== undefined ? row[8] : null);
-        
-        if (rawScore !== null && rawScore !== "" && !isNaN(parseFloat(rawScore))) {
-          var numScore = parseFloat(rawScore);
-          if (numScore <= 1 && numScore > 0) {
-            lastScore = (numScore * 100).toFixed(1) + "%";
-          } else {
-            lastScore = numScore.toFixed(1) + "%";
-          }
-          break;
-        }
-      }
-
-      for (var j = 1; j < data.length; j++) {
-        var status = (data[j][6] || '').toString().toLowerCase();
-        if (status !== 'selesai' && status !== 'closed') {
-          activeTemuan++;
-        }
-      }
-
-      document.getElementById("statAvgScore").innerText = lastScore;
-      document.getElementById("statActiveTemuan").innerText = activeTemuan;
-      document.getElementById("statTotalAudit").innerText = total;
-    }
-
-    function submitAuditForm(event) {
-      event.preventDefault();
-      
-      var btnSubmit = document.getElementById("btnSubmitAudit");
-      if (btnSubmit) {
-        btnSubmit.disabled = true;
-        btnSubmit.innerText = "Menyimpan Data...";
-      }
-
-      var tanggal = document.getElementById("inpTanggal").value;
-      var store = document.getElementById("inpStore").value;
-      var pillar = document.getElementById("inpPillar").value;
-      var temuan = document.getElementById("inpTemuan").value;
-      var tindakan = document.getElementById("inpTindakan").value;
-      var target = document.getElementById("inpTarget").value;
-      var status = document.getElementById("inpStatus").value;
-      var skor = document.getElementById("inpSkor").value || 0;
-
-      window.handleFormSubmit = function(res) {
-        if (btnSubmit) {
-          btnSubmit.disabled = false;
-          btnSubmit.innerText = "Simpan Laporan Audit";
-        }
-
-        if (res && res.status === "success") {
-          alert("✅ Data Audit Berhasil Disimpan!");
-          document.getElementById("formAudit").reset();
-          switchTab("dashboard");
-          loadData();
-        } else {
-          alert("❌ Gagal menyimpan data: " + (res.message || "Error server"));
-        }
-      };
-
-      var params = [
-        "action=addAudit",
-        "tanggal=" + encodeURIComponent(tanggal),
-        "store=" + encodeURIComponent(store),
-        "pillar=" + encodeURIComponent(pillar),
-        "temuan=" + encodeURIComponent(temuan),
-        "tindakan=" + encodeURIComponent(tindakan),
-        "target=" + encodeURIComponent(target),
-        "status=" + encodeURIComponent(status),
-        "skor=" + encodeURIComponent(skor),
-        "callback=handleFormSubmit",
-        "t=" + new Date().getTime()
-      ].join("&");
-
-      var script = document.createElement("script");
-      script.src = SCRIPT_URL + (SCRIPT_URL.indexOf("?") >= 0 ? "&" : "?") + params;
-      script.onerror = function() {
-        if (btnSubmit) {
-          btnSubmit.disabled = false;
-          btnSubmit.innerText = "Simpan Laporan Audit";
-        }
-        alert("❌ Gagal terhubung ke Google Sheets.");
-      };
-
-      document.body.appendChild(script);
-    }
-
-    function applyFilter() {
-      var selectedStore = document.getElementById("filterStore").value;
-      document.getElementById("lblFilterTarget").innerText = selectedStore === "ALL" ? "Semua Store" : selectedStore;
-
-      if (selectedStore === "ALL") {
-        renderTable(rawAuditData);
-        calculateMetrics(rawAuditData);
-      } else {
-        var filtered = rawAuditData.filter(function(row, index) {
-          return index === 0 || (row[1] && row[1].toString().trim() === selectedStore.trim());
-        });
-        renderTable(filtered);
-        calculateMetrics(filtered);
-      }
-    }
-
-    function formatDate(val) {
-      try {
-        var d = new Date(val);
-        if (!isNaN(d.getTime())) {
-          return d.toLocaleDateString('id-ID');
-        }
-      } catch(e) {}
-      return val;
-    }
-
-    document.addEventListener("DOMContentLoaded", function() {
-      loadData();
-    });
-  </script>
+  <!-- PANGGIL FILE JAVASCRIPT TERPISAH -->
+  <script src="app.js"></script>
 </body>
 </html>
