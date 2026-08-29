@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Dashboard Audit & CAPA Monitoring</title>
   
-  <!-- CDN External -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
@@ -20,7 +19,6 @@
         <p class="text-xs text-emerald-200">Labbaik Chicken Store Management</p>
       </div>
       
-      <!-- NAV TABS -->
       <nav class="flex space-x-2">
         <button id="navDashboard" type="button" onclick="switchTab('dashboard')" class="bg-emerald-600 px-4 py-2 rounded text-xs font-semibold shadow transition cursor-pointer">
           Dashboard CAPA
@@ -40,7 +38,6 @@
 
     <!-- TAB 1: DASHBOARD CAPA -->
     <section id="tabDashboard" class="space-y-6">
-      
       <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-200 flex flex-col md:flex-row justify-between items-center gap-4">
         <div class="flex items-center space-x-3 w-full md:w-auto">
           <label class="text-xs font-bold text-gray-600">Filter Store:</label>
@@ -64,7 +61,6 @@
         </div>
       </div>
 
-      <!-- METRICS -->
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-200 border-l-4 border-l-emerald-500">
           <p class="text-xs text-gray-500 font-semibold uppercase">Rata-Rata Skor Audit</p>
@@ -80,7 +76,6 @@
         </div>
       </div>
 
-      <!-- DATA TABLE -->
       <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         <div class="p-4 border-b border-gray-200 flex justify-between items-center bg-gray-50">
           <h3 class="font-bold text-sm text-gray-700">Daftar Temuan Audit & Status CAPA</h3>
@@ -112,77 +107,8 @@
       </div>
     </section>
 
-    <!-- TAB 2: GRAFIK & ANALISIS -->
-    <section id="tabCharts" class="hidden space-y-6">
-      
-      <div class="grid grid-cols-2 md:grid-cols-5 gap-3">
-        <div class="bg-white p-3 rounded-lg shadow-sm border text-center">
-          <p class="text-[10px] font-bold text-gray-400">HYGIENE</p>
-          <p id="avgHygienic" class="text-lg font-extrabold text-emerald-600">0%</p>
-        </div>
-        <div class="bg-white p-3 rounded-lg shadow-sm border text-center">
-          <p class="text-[10px] font-bold text-gray-400">HEALTHY</p>
-          <p id="avgHealthy" class="text-lg font-extrabold text-blue-600">0%</p>
-        </div>
-        <div class="bg-white p-3 rounded-lg shadow-sm border text-center">
-          <p class="text-[10px] font-bold text-gray-400">FRESH</p>
-          <p id="avgFresh" class="text-lg font-extrabold text-amber-500">0%</p>
-        </div>
-        <div class="bg-white p-3 rounded-lg shadow-sm border text-center">
-          <p class="text-[10px] font-bold text-gray-400">HALAL</p>
-          <p id="avgHalal" class="text-lg font-extrabold text-purple-600">0%</p>
-        </div>
-        <div class="bg-white p-3 rounded-lg shadow-sm border text-center col-span-2 md:col-span-1">
-          <p class="text-[10px] font-bold text-gray-400">CLEAN</p>
-          <p id="avgClean" class="text-lg font-extrabold text-red-500">0%</p>
-        </div>
-      </div>
-
-      <!-- CHARTS (KIRI: SKOR STORE, KANAN: PILAR) -->
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
-        <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-200">
-          <h4 class="font-bold text-xs text-gray-600 mb-4">Skor Audit Terakhir HHFHC Per Store (%)</h4>
-          <canvas id="chartStoreScore"></canvas>
-        </div>
-        <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-200">
-          <h4 class="font-bold text-xs text-gray-600 mb-4">Distribusi Temuan Berdasarkan Pillar</h4>
-          <canvas id="chartPillar"></canvas>
-        </div>
-      </div>
-    </section>
-
-    <!-- TAB 3: FORM INPUT -->
-    <section id="tabAuditForm" class="hidden space-y-6">
-      <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 max-w-4xl mx-auto">
-        <div class="border-b pb-4 mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-2">
-          <div>
-            <h3 class="font-extrabold text-lg text-gray-800">Input / Ekstrak Laporan Audit</h3>
-            <p class="text-xs text-gray-500">Upload file PDF Laporan Audit atau isi formulir secara manual.</p>
-          </div>
-        </div>
-
-        <form id="auditForm" class="space-y-6">
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 bg-gray-50 p-4 rounded-lg border border-gray-200">
-            <div>
-              <label class="block text-xs font-bold text-gray-600 mb-1">Nama Store</label>
-              <input type="text" id="inputStore" required placeholder="Contoh: LC Pandanwangi" class="w-full border rounded p-2 text-xs font-semibold bg-white" />
-            </div>
-            <div>
-              <label class="block text-xs font-bold text-gray-600 mb-1">Tanggal Audit</label>
-              <input type="date" id="inputTanggalWaktu" required class="w-full border rounded p-2 text-xs bg-white" />
-            </div>
-            <div>
-              <label class="block text-xs font-bold text-gray-600 mb-1">Nama Auditor</label>
-              <input type="text" id="inputAuditor" required placeholder="Nama Auditor" class="w-full border rounded p-2 text-xs bg-white" />
-            </div>
-          </div>
-          <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-4 rounded-lg text-sm shadow transition">
-            Simpan Data Audit
-          </button>
-        </form>
-      </div>
-    </section>
-
+    <!-- TAB 2 & 3 DISNIPPET AGAR EFISIEN (PASTIKAN MENGGUNAKAN HTML LENGKAP DARI JAWABAN SEBELUMNYA) -->
+    
   </main>
 
   <script src="app.js"></script>

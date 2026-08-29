@@ -1,5 +1,5 @@
-// GANTI STRING DI BAWAH INI DENGAN URL WEB APP GOOGLE APPS SCRIPT ANDA
-var SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxwtVSXL_i0khg70MV75MUPnBxxj5vslCR4IYQNqig3taNwqVSvRpWQBfOg1UKcJIersQ/exec";
+// GANTI STRING DI BAWAH INI DENGAN URL WEB APP ANDA
+var SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwGEu75NxXsdCldX-CPDvYdJuwUkbNXyVdKhw5dhjwE6zvVEj_2yOazVDVKq60l2aw1HQ/exec";
 
 var rawAuditData = [];
 
@@ -13,11 +13,13 @@ function switchTab(tabName) {
   if (tabDashboard) tabDashboard.classList.add("hidden");
   if (tabAuditForm) tabAuditForm.classList.add("hidden");
 
+  // Reset Style Tombol Navigasi
   ["navCharts", "navDashboard", "navAuditForm"].forEach(function(id) {
     var btn = document.getElementById(id);
     if (btn) btn.className = "bg-emerald-900 hover:bg-emerald-600 px-4 py-2 rounded text-xs font-semibold transition cursor-pointer";
   });
 
+  // Tampilkan Tab yang Dipilih
   if (tabName === "charts" && tabCharts) {
     tabCharts.classList.remove("hidden");
     document.getElementById("navCharts").className = "bg-emerald-600 px-4 py-2 rounded text-xs font-semibold shadow transition cursor-pointer";
@@ -30,39 +32,36 @@ function switchTab(tabName) {
   }
 }
 
-// ==================== LOAD DATA DARI GOOGLE SHEETS ====================
+// ==================== LOAD DATA (JSONP) ====================
 function loadData() {
   var tbody = document.getElementById("tableBody");
   if (tbody) {
     tbody.innerHTML = '<tr><td colspan="8" class="p-4 text-center text-gray-400">Memuat data dari Google Sheets...</td></tr>';
   }
 
-  // Menggunakan redirect: "follow" untuk menangani sistem redirect Google Apps Script
-  fetch(SCRIPT_URL, {
-    method: "GET",
-    redirect: "follow"
-  })
-    .then(function(res) {
-      if (!res.ok) {
-        throw new Error("HTTP error! status: " + res.status);
-      }
-      return res.json();
-    })
-    .then(function(response) {
-      if (response.status === "success" && response.data) {
-        rawAuditData = response.data;
-        renderTable(rawAuditData);
-        calculateMetrics(rawAuditData);
-      } else {
-        throw new Error(response.message || "Gagal mengambil data dari server");
-      }
-    })
-    .catch(function(err) {
-      console.error("Error Load Data:", err);
+  // Definisikan fungsi callback untuk menangkap JSONP
+  window.handleScriptData = function(response) {
+    if (response && response.status === "success" && response.data) {
+      rawAuditData = response.data;
+      renderTable(rawAuditData);
+      calculateMetrics(rawAuditData);
+    } else {
       if (tbody) {
-        tbody.innerHTML = '<tr><td colspan="8" class="p-4 text-center text-red-500 font-bold">Gagal memuat data! Periksa SCRIPT_URL atau atur akses deployment ke Anyone.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="8" class="p-4 text-center text-red-500 font-bold">Gagal mengambil data valid dari server.</td></tr>';
       }
-    });
+    }
+  };
+
+  // Buat element script dan bypass keamanan CORS lokal menggunakan JSONP
+  var script = document.createElement("script");
+  script.src = SCRIPT_URL + (SCRIPT_URL.indexOf("?") >= 0 ? "&" : "?") + "callback=handleScriptData";
+  script.onerror = function() {
+    if (tbody) {
+      tbody.innerHTML = '<tr><td colspan="8" class="p-4 text-center text-red-500 font-bold">Koneksi diblokir atau SCRIPT_URL salah.</td></tr>';
+    }
+  };
+
+  document.body.appendChild(script);
 }
 
 // ==================== RENDER TABEL ====================
@@ -76,7 +75,7 @@ function renderTable(data) {
   }
 
   var html = "";
-  // Lewati baris 0 (Header Spreadsheet)
+  // Lewati baris ke-0 (Header tabel)
   for (var i = 1; i < data.length; i++) {
     var row = data[i];
     var tgl = row[0] ? new Date(row[0]).toLocaleDateString('id-ID') : '-';
@@ -107,7 +106,7 @@ function renderTable(data) {
   tbody.innerHTML = html;
 }
 
-// ==================== HITUNG RINGKASAN STATISTIK ====================
+// ==================== HITUNG RINGKASAN METRIK ====================
 function calculateMetrics(data) {
   if (!data || data.length <= 1) return;
 
@@ -126,7 +125,7 @@ function calculateMetrics(data) {
   document.getElementById("statAvgScore").innerText = "85.4%";
 }
 
-// ==================== FILTER TABEL STORE ====================
+// ==================== FILTER DATA STORE ====================
 function applyFilter() {
   var selectedStore = document.getElementById("filterStore").value;
   document.getElementById("lblFilterTarget").innerText = selectedStore === "ALL" ? "Semua Store" : selectedStore;
@@ -141,7 +140,7 @@ function applyFilter() {
   }
 }
 
-// OTOMATIS JALANKAN SAAT HALAMAN SELESAI DIMUAT
+// ==================== INITIALIZATION ====================
 document.addEventListener("DOMContentLoaded", function() {
   loadData();
 });
