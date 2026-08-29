@@ -39,25 +39,23 @@ function loadData() {
     tbody.innerHTML = '<tr><td colspan="8" class="p-4 text-center text-gray-400">Memuat data dari Google Sheets...</td></tr>';
   }
 
-  // Definisikan fungsi callback untuk menangkap JSONP
   window.handleScriptData = function(response) {
-    if (response && response.status === "success" && response.data) {
+    if (response && response.status === "success" && Array.isArray(response.data)) {
       rawAuditData = response.data;
       renderTable(rawAuditData);
       calculateMetrics(rawAuditData);
     } else {
       if (tbody) {
-        tbody.innerHTML = '<tr><td colspan="8" class="p-4 text-center text-red-500 font-bold">Gagal mengambil data valid dari server.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="8" class="p-4 text-center text-red-500 font-bold">Gagal mengambil data dari Google Sheets.</td></tr>';
       }
     }
   };
 
-  // Buat element script dan bypass keamanan CORS lokal menggunakan JSONP
   var script = document.createElement("script");
-  script.src = SCRIPT_URL + (SCRIPT_URL.indexOf("?") >= 0 ? "&" : "?") + "callback=handleScriptData";
+  script.src = SCRIPT_URL + (SCRIPT_URL.indexOf("?") >= 0 ? "&" : "?") + "callback=handleScriptData&t=" + new Date().getTime();
   script.onerror = function() {
     if (tbody) {
-      tbody.innerHTML = '<tr><td colspan="8" class="p-4 text-center text-red-500 font-bold">Koneksi diblokir atau SCRIPT_URL salah.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="8" class="p-4 text-center text-red-500 font-bold">Gagal memuat script data. Pastikan SCRIPT_URL benar.</td></tr>';
     }
   };
 
@@ -75,18 +73,20 @@ function renderTable(data) {
   }
 
   var html = "";
-  // Lewati baris ke-0 (Header tabel)
+  // Baris ke-0 adalah Header
   for (var i = 1; i < data.length; i++) {
     var row = data[i];
-    var tgl = row[0] ? new Date(row[0]).toLocaleDateString('id-ID') : '-';
+    if (!row || row.length === 0) continue;
+
+    var tgl = row[0] ? formatDate(row[0]) : '-';
     var store = row[1] || '-';
     var pillar = row[2] || '-';
     var temuan = row[3] || '-';
     var tindakan = row[4] || '-';
-    var target = row[5] ? new Date(row[5]).toLocaleDateString('id-ID') : '-';
+    var target = row[5] ? formatDate(row[5]) : '-';
     var status = row[6] || 'Open';
 
-    var statusColor = (status.toLowerCase() === 'selesai' || status.toLowerCase() === 'closed')
+    var statusColor = (status.toString().toLowerCase() === 'selesai' || status.toString().toLowerCase() === 'closed')
       ? 'bg-emerald-100 text-emerald-800' 
       : 'bg-amber-100 text-amber-800';
 
@@ -106,38 +106,77 @@ function renderTable(data) {
   tbody.innerHTML = html;
 }
 
-// ==================== HITUNG RINGKASAN METRIK ====================
+// ==================== HITUNG METRIK & NILAI AUDIT TERAKHIR ====================
 function calculateMetrics(data) {
   if (!data || data.length <= 1) return;
 
   var total = data.length - 1;
   var activeTemuan = 0;
+  var lastScore = "0%";
 
-  for (var i = 1; i < data.length; i++) {
-    var status = (data[i][6] || '').toString().toLowerCase();
+  // 1. Cari Nilai Audit Terakhir (Diambil dari baris paling bawah/terakhir yang memiliki angka nilai)
+  for (var i = data.length - 1; i >= 1; i--) {
+    var row = data[i];
+    // Mengecek apakah ada nilai di kolom ke-8 (Kolom H) atau kolom ke-4/9 tergantung letak skor di Sheet Anda
+    var rawScore = row[7] !== undefined ? row[7] : (row[8] !== undefined ? row[8] : null);
+    
+    if (rawScore !== null && rawScore !== "" && !isNaN(parseFloat(rawScore))) {
+      var numScore = parseFloat(rawScore);
+      // Jika angka desimal kecil (contoh 0.85 -> 85%)
+      if (numScore <= 1 && numScore > 0) {
+        lastScore = (numScore * 100).toFixed(1) + "%";
+      } else {
+        lastScore = numScore.toFixed(1) + "%";
+      }
+      break; // Ambil yang paling akhir lalu hentikan loop
+    }
+  }
+
+  // 2. Hitung Temuan Aktif
+  for (var j = 1; j < data.length; j++) {
+    var status = (data[j][6] || '').toString().toLowerCase();
     if (status !== 'selesai' && status !== 'closed') {
       activeTemuan++;
     }
   }
 
-  document.getElementById("statTotalAudit").innerText = total;
-  document.getElementById("statActiveTemuan").innerText = activeTemuan;
-  document.getElementById("statAvgScore").innerText = "85.4%";
+  // Render ke Card Tampilan
+  var elAvg = document.getElementById("statAvgScore");
+  var elActive = document.getElementById("statActiveTemuan");
+  var elTotal = document.getElementById("statTotalAudit");
+
+  if (elAvg) elAvg.innerText = lastScore;
+  if (elActive) elActive.innerText = activeTemuan;
+  if (elTotal) elTotal.innerText = total;
 }
 
 // ==================== FILTER DATA STORE ====================
 function applyFilter() {
   var selectedStore = document.getElementById("filterStore").value;
-  document.getElementById("lblFilterTarget").innerText = selectedStore === "ALL" ? "Semua Store" : selectedStore;
+  var lbl = document.getElementById("lblFilterTarget");
+  if (lbl) lbl.innerText = selectedStore === "ALL" ? "Semua Store" : selectedStore;
 
   if (selectedStore === "ALL") {
     renderTable(rawAuditData);
+    calculateMetrics(rawAuditData);
   } else {
     var filtered = rawAuditData.filter(function(row, index) {
-      return index === 0 || row[1] === selectedStore;
+      return index === 0 || (row[1] && row[1].toString().trim() === selectedStore.trim());
     });
     renderTable(filtered);
+    calculateMetrics(filtered);
   }
+}
+
+// ==================== HELPER FORMAT TANGGAL ====================
+function formatDate(val) {
+  try {
+    var d = new Date(val);
+    if (!isNaN(d.getTime())) {
+      return d.toLocaleDateString('id-ID');
+    }
+  } catch(e) {}
+  return val;
 }
 
 // ==================== INITIALIZATION ====================
