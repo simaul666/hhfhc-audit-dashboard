@@ -5,13 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Dashboard Audit & CAPA Monitoring</title>
   
-  <!-- Tailwind CSS CDN -->
+  <!-- CDN External -->
   <script src="https://cdn.tailwindcss.com"></script>
-  
-  <!-- Chart.js CDN -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  
-  <!-- PDF.js CDN -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
 </head>
 <body class="bg-gray-100 font-sans text-gray-800 antialiased min-h-screen">
@@ -26,13 +22,13 @@
       
       <!-- NAV TABS -->
       <nav class="flex space-x-2">
-        <button id="navDashboard" onclick="switchTab('dashboard')" class="bg-emerald-600 px-4 py-2 rounded text-xs font-semibold shadow transition">
+        <button id="navDashboard" type="button" onclick="switchTab('dashboard')" class="bg-emerald-600 px-4 py-2 rounded text-xs font-semibold shadow transition cursor-pointer">
           Dashboard CAPA
         </button>
-        <button id="navCharts" onclick="switchTab('charts')" class="bg-emerald-900 hover:bg-emerald-600 px-4 py-2 rounded text-xs font-semibold transition">
+        <button id="navCharts" type="button" onclick="switchTab('charts')" class="bg-emerald-900 hover:bg-emerald-600 px-4 py-2 rounded text-xs font-semibold transition cursor-pointer">
           Grafik & Performa
         </button>
-        <button id="navAuditForm" onclick="switchTab('auditForm')" class="bg-amber-500 hover:bg-amber-400 text-gray-900 px-4 py-2 rounded text-xs font-bold transition">
+        <button id="navAuditForm" type="button" onclick="switchTab('auditForm')" class="bg-amber-500 hover:bg-amber-400 text-gray-900 px-4 py-2 rounded text-xs font-bold transition cursor-pointer">
           + Input / Upload Audit
         </button>
       </nav>
@@ -42,10 +38,9 @@
   <!-- MAIN CONTAINER -->
   <main class="max-w-7xl mx-auto px-4 py-6">
 
-    <!-- ==================== TAB 1: DASHBOARD CAPA ==================== -->
+    <!-- TAB 1: DASHBOARD CAPA -->
     <section id="tabDashboard" class="space-y-6">
       
-      <!-- FILTER BAR & SUMMARY CARDS -->
       <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-200 flex flex-col md:flex-row justify-between items-center gap-4">
         <div class="flex items-center space-x-3 w-full md:w-auto">
           <label class="text-xs font-bold text-gray-600">Filter Store:</label>
@@ -69,7 +64,7 @@
         </div>
       </div>
 
-      <!-- METRIC STATS CARDS -->
+      <!-- METRICS -->
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-200 border-l-4 border-l-emerald-500">
           <p class="text-xs text-gray-500 font-semibold uppercase">Rata-Rata Skor Audit</p>
@@ -85,11 +80,11 @@
         </div>
       </div>
 
-      <!-- TABLE LIST CAPA FINDINGS (KODE DISEMBUNYIKAN) -->
+      <!-- DATA TABLE -->
       <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         <div class="p-4 border-b border-gray-200 flex justify-between items-center bg-gray-50">
           <h3 class="font-bold text-sm text-gray-700">Daftar Temuan Audit & Status CAPA</h3>
-          <button onclick="loadData()" class="text-xs bg-gray-200 hover:bg-gray-300 px-3 py-1.5 rounded font-semibold text-gray-700 transition">
+          <button type="button" onclick="loadData()" class="text-xs bg-gray-200 hover:bg-gray-300 px-3 py-1.5 rounded font-semibold text-gray-700 transition">
             🔄 Refresh Data
           </button>
         </div>
@@ -109,7 +104,7 @@
             </thead>
             <tbody id="tableBody" class="divide-y divide-gray-100">
               <tr>
-                <td colspan="7" class="p-4 text-center text-gray-400">Memuat data dari Google Sheets...</td>
+                <td colspan="8" class="p-4 text-center text-gray-400">Memuat data dari Google Sheets...</td>
               </tr>
             </tbody>
           </table>
@@ -117,10 +112,9 @@
       </div>
     </section>
 
-    <!-- ==================== TAB 2: GRAFIK & ANALISIS ==================== -->
+    <!-- TAB 2: GRAFIK & ANALISIS -->
     <section id="tabCharts" class="hidden space-y-6">
       
-      <!-- PILLAR AVERAGE SCORES SUMMARY -->
       <div class="grid grid-cols-2 md:grid-cols-5 gap-3">
         <div class="bg-white p-3 rounded-lg shadow-sm border text-center">
           <p class="text-[10px] font-bold text-gray-400">HYGIENE</p>
@@ -144,15 +138,12 @@
         </div>
       </div>
 
-      <!-- CHARTS CONTAINER -->
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <!-- GRAFIK KIRI: Skor Update Terbaru HHFHC Per Store -->
+      <!-- CHARTS (KIRI: SKOR STORE, KANAN: PILAR) -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
         <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-200">
           <h4 class="font-bold text-xs text-gray-600 mb-4">Skor Audit Terakhir HHFHC Per Store (%)</h4>
           <canvas id="chartStoreScore"></canvas>
         </div>
-        
-        <!-- GRAFIK KANAN: Distribusi Temuan Berdasarkan Pilar -->
         <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-200">
           <h4 class="font-bold text-xs text-gray-600 mb-4">Distribusi Temuan Berdasarkan Pillar</h4>
           <canvas id="chartPillar"></canvas>
@@ -160,31 +151,17 @@
       </div>
     </section>
 
-    <!-- ==================== TAB 3: FORM INPUT & UPLOAD PDF ==================== -->
+    <!-- TAB 3: FORM INPUT -->
     <section id="tabAuditForm" class="hidden space-y-6">
       <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 max-w-4xl mx-auto">
-        
-        <!-- HEADER FORM -->
         <div class="border-b pb-4 mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-2">
           <div>
-            <h3 class="font-extrabold text-lg text-gray-800">Input / Extrak Laporan Audit</h3>
+            <h3 class="font-extrabold text-lg text-gray-800">Input / Ekstrak Laporan Audit</h3>
             <p class="text-xs text-gray-500">Upload file PDF Laporan Audit atau isi formulir secara manual.</p>
           </div>
-          <span class="bg-amber-100 text-amber-800 text-[10px] font-bold px-2.5 py-1 rounded">Auto PDF Extractor</span>
         </div>
 
-        <!-- UPLOAD SECTION -->
-        <div class="bg-emerald-50 border-2 border-dashed border-emerald-300 rounded-lg p-4 text-center mb-6">
-          <p class="text-xs font-bold text-emerald-800 mb-1">Unggah PDF Laporan Audit</p>
-          <p class="text-[11px] text-emerald-600 mb-3">Sistem akan mengekstrak Toko, Auditor, Nilai Pilar, dan Temuan secara otomatis.</p>
-          <input type="file" id="pdfFileInput" accept="application/pdf" onchange="handlePdfUpload(event)" class="text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-emerald-600 file:text-white hover:file:bg-emerald-700 cursor-pointer" />
-          <p id="pdfUploadStatus" class="text-[11px] font-bold text-emerald-700 mt-2"></p>
-        </div>
-
-        <!-- FORM CONTENT -->
-        <form id="auditForm" onsubmit="submitForm(event)" class="space-y-6">
-          
-          <!-- STORE INFO -->
+        <form id="auditForm" class="space-y-6">
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4 bg-gray-50 p-4 rounded-lg border border-gray-200">
             <div>
               <label class="block text-xs font-bold text-gray-600 mb-1">Nama Store</label>
@@ -198,74 +175,16 @@
               <label class="block text-xs font-bold text-gray-600 mb-1">Nama Auditor</label>
               <input type="text" id="inputAuditor" required placeholder="Nama Auditor" class="w-full border rounded p-2 text-xs bg-white" />
             </div>
-            <div>
-              <label class="block text-xs font-bold text-gray-600 mb-1">Store Leader</label>
-              <input type="text" id="inputStoreLeader" placeholder="Nama Store Leader" class="w-full border rounded p-2 text-xs bg-white" />
-            </div>
-            <div>
-              <label class="block text-xs font-bold text-gray-600 mb-1">Audit Ke-</label>
-              <input type="number" id="inputAuditKe" placeholder="1" class="w-full border rounded p-2 text-xs bg-white" />
-            </div>
-            <div>
-              <label class="block text-xs font-bold text-gray-600 mb-1">Predikat</label>
-              <input type="text" id="inputPredikat" placeholder="Bagus / Cukup / Perlu Perbaikan" class="w-full border rounded p-2 text-xs bg-white" />
-            </div>
           </div>
-
-          <!-- SKOR 5 PILAR -->
-          <div>
-            <h4 class="text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">Nilai Skor 5 Pilar Audit (%)</h4>
-            <div class="grid grid-cols-2 md:grid-cols-5 gap-3 bg-gray-50 p-4 rounded-lg border border-gray-200">
-              <div>
-                <label class="block text-[11px] font-bold text-gray-500">Hygiene</label>
-                <input type="number" step="0.1" id="scoreH" placeholder="0" class="w-full border rounded p-2 text-xs font-bold text-emerald-700 bg-white" />
-              </div>
-              <div>
-                <label class="block text-[11px] font-bold text-gray-500">Healthy</label>
-                <input type="number" step="0.1" id="scoreHe" placeholder="0" class="w-full border rounded p-2 text-xs font-bold text-emerald-700 bg-white" />
-              </div>
-              <div>
-                <label class="block text-[11px] font-bold text-gray-500">Fresh</label>
-                <input type="number" step="0.1" id="scoreF" placeholder="0" class="w-full border rounded p-2 text-xs font-bold text-emerald-700 bg-white" />
-              </div>
-              <div>
-                <label class="block text-[11px] font-bold text-gray-500">Halal</label>
-                <input type="number" step="0.1" id="scoreHa" placeholder="0" class="w-full border rounded p-2 text-xs font-bold text-emerald-700 bg-white" />
-              </div>
-              <div>
-                <label class="block text-[11px] font-bold text-gray-500">Clean</label>
-                <input type="number" step="0.1" id="scoreC" placeholder="0" class="w-full border rounded p-2 text-xs font-bold text-emerald-700 bg-white" />
-              </div>
-            </div>
-          </div>
-
-          <!-- RINCIAN TEMUAN (DYNAMIC ROWS) -->
-          <div>
-            <div class="flex justify-between items-center mb-2">
-              <h4 class="text-xs font-bold text-gray-700 uppercase tracking-wider">Rincian Temuan Ketidaksesuaian</h4>
-              <button type="button" onclick="addFindingRow()" class="text-xs bg-emerald-100 text-emerald-700 hover:bg-emerald-200 font-bold px-3 py-1 rounded transition">
-                + Tambah Baris Temuan
-              </button>
-            </div>
-            
-            <div id="findingsContainer" class="space-y-3">
-              <!-- Item temuan akan dimasukkan dinamis lewat app.js -->
-            </div>
-          </div>
-
-          <!-- SUBMIT BUTTON -->
-          <div class="pt-4 border-t">
-            <button type="submit" id="btnSubmit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-4 rounded-lg text-sm shadow transition">
-              Simpan Seluruh Data Audit & Temuan
-            </button>
-          </div>
+          <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-4 rounded-lg text-sm shadow transition">
+            Simpan Data Audit
+          </button>
         </form>
       </div>
     </section>
 
   </main>
 
-  <!-- APP SCRIPT -->
   <script src="app.js"></script>
 </body>
 </html>

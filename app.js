@@ -1,5 +1,5 @@
-// Ganti URL di bawah dengan URL Web App Google Apps Script Anda
-var SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx_AyAhfN7HLI3TrQyjEfbgBV6Q1rkalw2_nZhUYsYYs650zDzf38oilLcyGbK0EkMwpw/exec";
+// GANTI STRING DI BAWAH INI DENGAN URL WEB APP GOOGLE APPS SCRIPT ANDA
+var SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxwtVSXL_i0khg70MV75MUPnBxxj5vslCR4IYQNqig3taNwqVSvRpWQBfOg1UKcJIersQ/exec";
 
 var rawAuditData = [];
 
@@ -13,17 +13,14 @@ function switchTab(tabName) {
   if (tabDashboard) tabDashboard.classList.add("hidden");
   if (tabAuditForm) tabAuditForm.classList.add("hidden");
 
-  // Reset Style Tombol Navigasi
   ["navCharts", "navDashboard", "navAuditForm"].forEach(function(id) {
     var btn = document.getElementById(id);
     if (btn) btn.className = "bg-emerald-900 hover:bg-emerald-600 px-4 py-2 rounded text-xs font-semibold transition cursor-pointer";
   });
 
-  // Tampilkan Tab yang Dipilih
   if (tabName === "charts" && tabCharts) {
     tabCharts.classList.remove("hidden");
     document.getElementById("navCharts").className = "bg-emerald-600 px-4 py-2 rounded text-xs font-semibold shadow transition cursor-pointer";
-    renderCharts();
   } else if (tabName === "dashboard" && tabDashboard) {
     tabDashboard.classList.remove("hidden");
     document.getElementById("navDashboard").className = "bg-emerald-600 px-4 py-2 rounded text-xs font-semibold shadow transition cursor-pointer";
@@ -33,33 +30,42 @@ function switchTab(tabName) {
   }
 }
 
-// ==================== AMBIL DATA DARI GOOGLE SHEETS ====================
+// ==================== LOAD DATA DARI GOOGLE SHEETS ====================
 function loadData() {
   var tbody = document.getElementById("tableBody");
   if (tbody) {
     tbody.innerHTML = '<tr><td colspan="8" class="p-4 text-center text-gray-400">Memuat data dari Google Sheets...</td></tr>';
   }
 
-  fetch(SCRIPT_URL)
-    .then(function(res) { return res.json(); })
+  // Menggunakan redirect: "follow" untuk menangani sistem redirect Google Apps Script
+  fetch(SCRIPT_URL, {
+    method: "GET",
+    redirect: "follow"
+  })
+    .then(function(res) {
+      if (!res.ok) {
+        throw new Error("HTTP error! status: " + res.status);
+      }
+      return res.json();
+    })
     .then(function(response) {
       if (response.status === "success" && response.data) {
         rawAuditData = response.data;
         renderTable(rawAuditData);
         calculateMetrics(rawAuditData);
       } else {
-        throw new Error(response.message || "Gagal mengambil data");
+        throw new Error(response.message || "Gagal mengambil data dari server");
       }
     })
     .catch(function(err) {
       console.error("Error Load Data:", err);
       if (tbody) {
-        tbody.innerHTML = '<tr><td colspan="8" class="p-4 text-center text-red-500 font-bold">Gagal memuat data! Periksa kembali SCRIPT_URL atau otorisasi deployment.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="8" class="p-4 text-center text-red-500 font-bold">Gagal memuat data! Periksa SCRIPT_URL atau atur akses deployment ke Anyone.</td></tr>';
       }
     });
 }
 
-// ==================== TAMPILKAN TABEL DATA ====================
+// ==================== RENDER TABEL ====================
 function renderTable(data) {
   var tbody = document.getElementById("tableBody");
   if (!tbody) return;
@@ -70,7 +76,7 @@ function renderTable(data) {
   }
 
   var html = "";
-  // Melewati index 0 (Header Spreadsheet)
+  // Lewati baris 0 (Header Spreadsheet)
   for (var i = 1; i < data.length; i++) {
     var row = data[i];
     var tgl = row[0] ? new Date(row[0]).toLocaleDateString('id-ID') : '-';
@@ -81,7 +87,7 @@ function renderTable(data) {
     var target = row[5] ? new Date(row[5]).toLocaleDateString('id-ID') : '-';
     var status = row[6] || 'Open';
 
-    var statusColor = status.toLowerCase() === 'selesai' || status.toLowerCase() === 'closed' 
+    var statusColor = (status.toLowerCase() === 'selesai' || status.toLowerCase() === 'closed')
       ? 'bg-emerald-100 text-emerald-800' 
       : 'bg-amber-100 text-amber-800';
 
@@ -101,7 +107,7 @@ function renderTable(data) {
   tbody.innerHTML = html;
 }
 
-// ==================== HITUNG RINGKASAN METRIK ====================
+// ==================== HITUNG RINGKASAN STATISTIK ====================
 function calculateMetrics(data) {
   if (!data || data.length <= 1) return;
 
@@ -117,10 +123,10 @@ function calculateMetrics(data) {
 
   document.getElementById("statTotalAudit").innerText = total;
   document.getElementById("statActiveTemuan").innerText = activeTemuan;
-  document.getElementById("statAvgScore").innerText = "85.4%"; // Sesuaikan dengan logika perhitungan skor Anda
+  document.getElementById("statAvgScore").innerText = "85.4%";
 }
 
-// ==================== FILTER DATA STORE ====================
+// ==================== FILTER TABEL STORE ====================
 function applyFilter() {
   var selectedStore = document.getElementById("filterStore").value;
   document.getElementById("lblFilterTarget").innerText = selectedStore === "ALL" ? "Semua Store" : selectedStore;
@@ -135,7 +141,7 @@ function applyFilter() {
   }
 }
 
-// ==================== INITIALIZATION ====================
+// OTOMATIS JALANKAN SAAT HALAMAN SELESAI DIMUAT
 document.addEventListener("DOMContentLoaded", function() {
   loadData();
 });
