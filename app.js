@@ -1,5 +1,5 @@
 // GANTI STRING DI BAWAH INI DENGAN URL WEB APP ANDA
-var SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwGEu75NxXsdCldX-CPDvYdJuwUkbNXyVdKhw5dhjwE6zvVEj_2yOazVDVKq60l2aw1HQ/exec";
+var SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwvBm9ThNQDHmRz5PmHpHgoeCNBlkKiCzLSCjfrKcoljkGHRfOYYWl02BUduqE6bTmgiA/exec";
 
 var rawAuditData = [];
 

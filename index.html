@@ -4,14 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Dashboard Audit & CAPA Monitoring</title>
-  
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
 </head>
 <body class="bg-gray-100 font-sans text-gray-800 antialiased min-h-screen">
 
-  <!-- HEADER & NAVIGATION -->
+  <!-- HEADER & NAVIGASI -->
   <header class="bg-emerald-800 text-white shadow-md">
     <div class="max-w-7xl mx-auto px-4 py-4 flex flex-col md:flex-row justify-between items-center gap-4">
       <div>
@@ -23,20 +20,16 @@
         <button id="navDashboard" type="button" onclick="switchTab('dashboard')" class="bg-emerald-600 px-4 py-2 rounded text-xs font-semibold shadow transition cursor-pointer">
           Dashboard CAPA
         </button>
-        <button id="navCharts" type="button" onclick="switchTab('charts')" class="bg-emerald-900 hover:bg-emerald-600 px-4 py-2 rounded text-xs font-semibold transition cursor-pointer">
-          Grafik & Performa
-        </button>
         <button id="navAuditForm" type="button" onclick="switchTab('auditForm')" class="bg-amber-500 hover:bg-amber-400 text-gray-900 px-4 py-2 rounded text-xs font-bold transition cursor-pointer">
-          + Input / Upload Audit
+          + Input Laporan Audit
         </button>
       </nav>
     </div>
   </header>
 
-  <!-- MAIN CONTAINER -->
   <main class="max-w-7xl mx-auto px-4 py-6">
 
-    <!-- TAB 1: DASHBOARD CAPA -->
+    <!-- DASHBOARD TAB -->
     <section id="tabDashboard" class="space-y-6">
       <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-200 flex flex-col md:flex-row justify-between items-center gap-4">
         <div class="flex items-center space-x-3 w-full md:w-auto">
@@ -61,9 +54,10 @@
         </div>
       </div>
 
+      <!-- CARDS METRIK -->
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-200 border-l-4 border-l-emerald-500">
-          <p class="text-xs text-gray-500 font-semibold uppercase">Rata-Rata Skor Audit</p>
+          <p class="text-xs text-gray-500 font-semibold uppercase">Nilai Audit Terakhir</p>
           <h2 id="statAvgScore" class="text-3xl font-extrabold text-emerald-600 mt-1">0%</h2>
         </div>
         <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-200 border-l-4 border-l-amber-500">
@@ -76,6 +70,7 @@
         </div>
       </div>
 
+      <!-- TABEL DATA -->
       <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         <div class="p-4 border-b border-gray-200 flex justify-between items-center bg-gray-50">
           <h3 class="font-bold text-sm text-gray-700">Daftar Temuan Audit & Status CAPA</h3>
@@ -94,7 +89,7 @@
                 <th class="p-3">Tindakan Koreksi</th>
                 <th class="p-3">Target Selesai</th>
                 <th class="p-3">Status</th>
-                <th class="p-3">Aksi</th>
+                <th class="p-3">Skor</th>
               </tr>
             </thead>
             <tbody id="tableBody" class="divide-y divide-gray-100">
@@ -107,10 +102,301 @@
       </div>
     </section>
 
-    <!-- TAB 2 & 3 DISNIPPET AGAR EFISIEN (PASTIKAN MENGGUNAKAN HTML LENGKAP DARI JAWABAN SEBELUMNYA) -->
-    
+    <!-- FORM TAB -->
+    <section id="tabAuditForm" class="hidden max-w-2xl mx-auto bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+      <h2 class="text-lg font-bold text-gray-800 border-b pb-3 mb-4">Input Temuan Audit / CAPA Baru</h2>
+      
+      <form id="formAudit" onsubmit="submitAuditForm(event)" class="space-y-4 text-xs">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block font-semibold mb-1 text-gray-700">Tanggal Audit</label>
+            <input type="date" id="inpTanggal" required class="w-full border rounded p-2 focus:ring-2 focus:ring-emerald-500">
+          </div>
+          <div>
+            <label class="block font-semibold mb-1 text-gray-700">Pilih Store</label>
+            <select id="inpStore" required class="w-full border rounded p-2 bg-white focus:ring-2 focus:ring-emerald-500">
+              <option value="LC Pandanwangi">LC Pandanwangi</option>
+              <option value="LC Cileunyi">LC Cileunyi</option>
+              <option value="LC Jatos">LC Jatos</option>
+              <option value="LC Cipasir">LC Cipasir</option>
+              <option value="LC Legok Jabar">LC Legok Jabar</option>
+              <option value="LC Simpang Lima">LC Simpang Lima</option>
+              <option value="LC Cimanuk">LC Cimanuk</option>
+              <option value="LC Singaparna">LC Singaparna</option>
+              <option value="LC Siliwangi">LC Siliwangi</option>
+              <option value="LC Indihiang">LC Indihiang</option>
+              <option value="LC Bulak Laut">LC Bulak Laut</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block font-semibold mb-1 text-gray-700">Pillar Audit</label>
+            <input type="text" id="inpPillar" placeholder="Quality / Food Safety / Service" required class="w-full border rounded p-2 focus:ring-2 focus:ring-emerald-500">
+          </div>
+          <div>
+            <label class="block font-semibold mb-1 text-gray-700">Nilai Audit (%)</label>
+            <input type="number" id="inpSkor" placeholder="Contoh: 85.5" step="0.1" class="w-full border rounded p-2 focus:ring-2 focus:ring-emerald-500">
+          </div>
+        </div>
+
+        <div>
+          <label class="block font-semibold mb-1 text-gray-700">Detail Temuan Audit</label>
+          <textarea id="inpTemuan" rows="3" required placeholder="Jelaskan temuan ketidaksesuaian..." class="w-full border rounded p-2 focus:ring-2 focus:ring-emerald-500"></textarea>
+        </div>
+
+        <div>
+          <label class="block font-semibold mb-1 text-gray-700">Tindakan Koreksi (CAPA)</label>
+          <textarea id="inpTindakan" rows="2" placeholder="Rencana tindakan perbaikan..." class="w-full border rounded p-2 focus:ring-2 focus:ring-emerald-500"></textarea>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block font-semibold mb-1 text-gray-700">Target Selesai</label>
+            <input type="date" id="inpTarget" class="w-full border rounded p-2 focus:ring-2 focus:ring-emerald-500">
+          </div>
+          <div>
+            <label class="block font-semibold mb-1 text-gray-700">Status CAPA</label>
+            <select id="inpStatus" class="w-full border rounded p-2 bg-white focus:ring-2 focus:ring-emerald-500">
+              <option value="Open">Open</option>
+              <option value="In Progress">In Progress</option>
+              <option value="Selesai">Selesai</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="pt-3">
+          <button id="btnSubmitAudit" type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded shadow transition cursor-pointer">
+            Simpan Laporan Audit
+          </button>
+        </div>
+      </form>
+    </section>
+
   </main>
 
-  <script src="app.js"></script>
+  <script>
+    // MASUKKAN URL WEB APP GOOGLE APPS SCRIPT ANDA DI SINI
+    var SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx.../exec";
+
+    var rawAuditData = [];
+
+    function switchTab(tabName) {
+      var tabDashboard = document.getElementById("tabDashboard");
+      var tabAuditForm = document.getElementById("tabAuditForm");
+
+      if (tabDashboard) tabDashboard.classList.add("hidden");
+      if (tabAuditForm) tabAuditForm.classList.add("hidden");
+
+      document.getElementById("navDashboard").className = "bg-emerald-900 hover:bg-emerald-600 px-4 py-2 rounded text-xs font-semibold transition cursor-pointer";
+      document.getElementById("navAuditForm").className = "bg-emerald-900 hover:bg-emerald-600 px-4 py-2 rounded text-xs font-semibold transition cursor-pointer";
+
+      if (tabName === "dashboard" && tabDashboard) {
+        tabDashboard.classList.remove("hidden");
+        document.getElementById("navDashboard").className = "bg-emerald-600 px-4 py-2 rounded text-xs font-semibold shadow transition cursor-pointer";
+      } else if (tabName === "auditForm" && tabAuditForm) {
+        tabAuditForm.classList.remove("hidden");
+        document.getElementById("navAuditForm").className = "bg-amber-500 hover:bg-amber-400 text-gray-900 px-4 py-2 rounded text-xs font-bold transition cursor-pointer";
+      }
+    }
+
+    function loadData() {
+      var tbody = document.getElementById("tableBody");
+      if (tbody) {
+        tbody.innerHTML = '<tr><td colspan="8" class="p-4 text-center text-gray-400">Memuat data dari Google Sheets...</td></tr>';
+      }
+
+      window.handleScriptData = function(response) {
+        if (response && response.status === "success" && Array.isArray(response.data)) {
+          rawAuditData = response.data;
+          renderTable(rawAuditData);
+          calculateMetrics(rawAuditData);
+        } else {
+          if (tbody) {
+            tbody.innerHTML = '<tr><td colspan="8" class="p-4 text-center text-red-500 font-bold">Gagal mengambil data dari Google Sheets.</td></tr>';
+          }
+        }
+      };
+
+      var script = document.createElement("script");
+      script.src = SCRIPT_URL + (SCRIPT_URL.indexOf("?") >= 0 ? "&" : "?") + "callback=handleScriptData&t=" + new Date().getTime();
+      script.onerror = function() {
+        if (tbody) {
+          tbody.innerHTML = '<tr><td colspan="8" class="p-4 text-center text-red-500 font-bold">Gagal terhubung. Pastikan SCRIPT_URL sudah benar dan diset ke Anyone.</td></tr>';
+        }
+      };
+
+      document.body.appendChild(script);
+    }
+
+    function renderTable(data) {
+      var tbody = document.getElementById("tableBody");
+      if (!tbody) return;
+
+      if (!data || data.length <= 1) {
+        tbody.innerHTML = '<tr><td colspan="8" class="p-4 text-center text-gray-400">Belum ada data audit yang tersimpan.</td></tr>';
+        return;
+      }
+
+      var html = "";
+      for (var i = 1; i < data.length; i++) {
+        var row = data[i];
+        if (!row || row.length === 0) continue;
+
+        var tgl = row[0] ? formatDate(row[0]) : '-';
+        var store = row[1] || '-';
+        var pillar = row[2] || '-';
+        var temuan = row[3] || '-';
+        var tindakan = row[4] || '-';
+        var target = row[5] ? formatDate(row[5]) : '-';
+        var status = row[6] || 'Open';
+        var skor = row[7] !== undefined ? row[7] : '-';
+
+        var statusColor = (status.toString().toLowerCase() === 'selesai' || status.toString().toLowerCase() === 'closed')
+          ? 'bg-emerald-100 text-emerald-800' 
+          : 'bg-amber-100 text-amber-800';
+
+        html += `
+          <tr class="hover:bg-gray-50 border-b">
+            <td class="p-3">${tgl}</td>
+            <td class="p-3 font-semibold text-gray-800">${store}</td>
+            <td class="p-3">${pillar}</td>
+            <td class="p-3">${temuan}</td>
+            <td class="p-3">${tindakan}</td>
+            <td class="p-3">${target}</td>
+            <td class="p-3"><span class="${statusColor} text-[10px] px-2 py-1 rounded font-bold">${status}</span></td>
+            <td class="p-3 font-bold">${skor}${typeof skor === 'number' ? '%' : ''}</td>
+          </tr>
+        `;
+      }
+      tbody.innerHTML = html;
+    }
+
+    function calculateMetrics(data) {
+      if (!data || data.length <= 1) return;
+
+      var total = data.length - 1;
+      var activeTemuan = 0;
+      var lastScore = "0%";
+
+      for (var i = data.length - 1; i >= 1; i--) {
+        var row = data[i];
+        var rawScore = row[7] !== undefined ? row[7] : (row[8] !== undefined ? row[8] : null);
+        
+        if (rawScore !== null && rawScore !== "" && !isNaN(parseFloat(rawScore))) {
+          var numScore = parseFloat(rawScore);
+          if (numScore <= 1 && numScore > 0) {
+            lastScore = (numScore * 100).toFixed(1) + "%";
+          } else {
+            lastScore = numScore.toFixed(1) + "%";
+          }
+          break;
+        }
+      }
+
+      for (var j = 1; j < data.length; j++) {
+        var status = (data[j][6] || '').toString().toLowerCase();
+        if (status !== 'selesai' && status !== 'closed') {
+          activeTemuan++;
+        }
+      }
+
+      document.getElementById("statAvgScore").innerText = lastScore;
+      document.getElementById("statActiveTemuan").innerText = activeTemuan;
+      document.getElementById("statTotalAudit").innerText = total;
+    }
+
+    function submitAuditForm(event) {
+      event.preventDefault();
+      
+      var btnSubmit = document.getElementById("btnSubmitAudit");
+      if (btnSubmit) {
+        btnSubmit.disabled = true;
+        btnSubmit.innerText = "Menyimpan Data...";
+      }
+
+      var tanggal = document.getElementById("inpTanggal").value;
+      var store = document.getElementById("inpStore").value;
+      var pillar = document.getElementById("inpPillar").value;
+      var temuan = document.getElementById("inpTemuan").value;
+      var tindakan = document.getElementById("inpTindakan").value;
+      var target = document.getElementById("inpTarget").value;
+      var status = document.getElementById("inpStatus").value;
+      var skor = document.getElementById("inpSkor").value || 0;
+
+      window.handleFormSubmit = function(res) {
+        if (btnSubmit) {
+          btnSubmit.disabled = false;
+          btnSubmit.innerText = "Simpan Laporan Audit";
+        }
+
+        if (res && res.status === "success") {
+          alert("✅ Data Audit Berhasil Disimpan!");
+          document.getElementById("formAudit").reset();
+          switchTab("dashboard");
+          loadData();
+        } else {
+          alert("❌ Gagal menyimpan data: " + (res.message || "Error server"));
+        }
+      };
+
+      var params = [
+        "action=addAudit",
+        "tanggal=" + encodeURIComponent(tanggal),
+        "store=" + encodeURIComponent(store),
+        "pillar=" + encodeURIComponent(pillar),
+        "temuan=" + encodeURIComponent(temuan),
+        "tindakan=" + encodeURIComponent(tindakan),
+        "target=" + encodeURIComponent(target),
+        "status=" + encodeURIComponent(status),
+        "skor=" + encodeURIComponent(skor),
+        "callback=handleFormSubmit",
+        "t=" + new Date().getTime()
+      ].join("&");
+
+      var script = document.createElement("script");
+      script.src = SCRIPT_URL + (SCRIPT_URL.indexOf("?") >= 0 ? "&" : "?") + params;
+      script.onerror = function() {
+        if (btnSubmit) {
+          btnSubmit.disabled = false;
+          btnSubmit.innerText = "Simpan Laporan Audit";
+        }
+        alert("❌ Gagal terhubung ke Google Sheets.");
+      };
+
+      document.body.appendChild(script);
+    }
+
+    function applyFilter() {
+      var selectedStore = document.getElementById("filterStore").value;
+      document.getElementById("lblFilterTarget").innerText = selectedStore === "ALL" ? "Semua Store" : selectedStore;
+
+      if (selectedStore === "ALL") {
+        renderTable(rawAuditData);
+        calculateMetrics(rawAuditData);
+      } else {
+        var filtered = rawAuditData.filter(function(row, index) {
+          return index === 0 || (row[1] && row[1].toString().trim() === selectedStore.trim());
+        });
+        renderTable(filtered);
+        calculateMetrics(filtered);
+      }
+    }
+
+    function formatDate(val) {
+      try {
+        var d = new Date(val);
+        if (!isNaN(d.getTime())) {
+          return d.toLocaleDateString('id-ID');
+        }
+      } catch(e) {}
+      return val;
+    }
+
+    document.addEventListener("DOMContentLoaded", function() {
+      loadData();
+    });
+  </script>
 </body>
 </html>
