@@ -1,5 +1,5 @@
 // Ganti URL di bawah dengan URL Web App Google Apps Script Anda
-var SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz13J39HuSTtTom6QKnWJPMmW3ZEN9oXBAJ5_TyHFZm9Nff92pJ10sS-3wqJSZmFr53aw/exec";
+var SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx_AyAhfN7HLI3TrQyjEfbgBV6Q1rkalw2_nZhUYsYYs650zDzf38oilLcyGbK0EkMwpw/exec";
 
 var rawAuditData = [];
 
